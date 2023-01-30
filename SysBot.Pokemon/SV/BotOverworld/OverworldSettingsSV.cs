@@ -60,7 +60,7 @@ public class OverworldSettingsSV : IBotStateSettings, ICountSettings
         public SandwichFlavor SandwichFlavor { get; set; } = SandwichFlavor.Encounter;
 
         [Category(Overworld), Description("When enabled, the bot will click DUP on Item 1.")]
-        public bool Item1DUP { get; set; } = false;
+        public bool Item1DUP { get; set; } = true;
 
         [Category(Overworld), Description("Item 1.")]
         public PicnicFillings Item1 { get; set; } = PicnicFillings.Lettuce;

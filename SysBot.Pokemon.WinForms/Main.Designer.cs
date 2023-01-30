@@ -110,7 +110,7 @@ namespace SysBot.Pokemon.WinForms
             TB_IP.Name = "TB_IP";
             TB_IP.Size = new System.Drawing.Size(134, 20);
             TB_IP.TabIndex = 8;
-            TB_IP.Text = "192.168.0.1";
+            TB_IP.Text = "192.168.1.65";
             // 
             // CB_Routine
             // 

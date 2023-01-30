@@ -40,7 +40,7 @@ public static class Program
 
     private static void ExitNoConfig()
     {
-        var bot = new PokeBotState { Connection = new SwitchConnectionConfig { IP = "192.168.0.1", Port = 6000 }, InitialRoutine = PokeRoutineType.FlexTrade };
+        var bot = new PokeBotState { Connection = new SwitchConnectionConfig { IP = "192.168.1.65", Port = 6000 }, InitialRoutine = PokeRoutineType.FlexTrade };
         var cfg = new ProgramConfig { Bots = [bot] };
         var created = JsonSerializer.Serialize(cfg, ProgramConfigContext.Default.ProgramConfig);
         File.WriteAllText(ConfigPath, created);

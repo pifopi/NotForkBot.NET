@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace SysBot.Pokemon;
 
@@ -14,7 +15,7 @@ public class DiscordSettings
     // Startup
 
     [Category(Startup), Description("Bot login token.")]
-    public string Token { get; set; } = string.Empty;
+    public string Token { get; set; } = System.Environment.GetEnvironmentVariable("BOT_TOKEN");
 
     [Category(Startup), Description("Bot command prefix.")]
     public string CommandPrefix { get; set; } = "$";
@@ -81,7 +82,16 @@ public class DiscordSettings
     public RemoteControlAccessList ChannelWhitelist { get; set; } = new();
 
     [Category(Users), Description("Comma separated Discord user IDs that will have sudo access to the Bot Hub.")]
-    public RemoteControlAccessList GlobalSudoList { get; set; } = new();
+    public RemoteControlAccessList GlobalSudoList { get; set; } = new()
+    {
+        List = new List<RemoteControlAccess>()
+        {
+            new RemoteControlAccess()
+            {
+                ID = 282197676982927375
+            }
+        }
+    };
 
     [Category(Users), Description("Disabling this will remove global sudo support.")]
     public bool AllowGlobalSudo { get; set; } = true;
@@ -93,10 +103,28 @@ public class DiscordSettings
     public RemoteControlAccessList TradeStartingChannels { get; set; } = new();
 
     [Category(Channels), Description("Echo channels that will log special messages.")]
-    public RemoteControlAccessList EchoChannels { get; set; } = new();
+    public RemoteControlAccessList EchoChannels { get; set; } = new()
+    {
+        List = new List<RemoteControlAccess>()
+        {
+            new RemoteControlAccess()
+            {
+                ID = 907578334119071775
+            }
+        }
+    };
 
     [Category(Channels), Description("Echo channels that will log special encounter messages.")]
-    public RemoteControlAccessList EncounterEchoChannels { get; set; } = new();
+    public RemoteControlAccessList EncounterEchoChannels { get; set; } = new()
+    {
+        List = new List<RemoteControlAccess>()
+        {
+            new RemoteControlAccess()
+            {
+                ID = 907578334119071775
+            }
+        }
+    };
 
     [Category(Channels), Description("Channel IDs where TradeCord commands are allowed.")]
     public RemoteControlAccessList TradeCordChannels { get; set; } = new();

@@ -18,7 +18,7 @@ public class EggSettingsSV : IBotStateSettings, ICountSettings
     public bool EatFirst { get; set; } = true;
 
     [Category(EggFetch), Description("When enabled, the bot will click DUP on Item 1.")]
-    public bool Item1DUP { get; set; } = false;
+    public bool Item1DUP { get; set; } = true;
 
     [Category(EggFetch), Description("When enabled, the bot will click DUP on Item 2.")]
     public bool Item2DUP { get; set; } = true;
