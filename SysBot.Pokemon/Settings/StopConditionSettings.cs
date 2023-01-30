@@ -30,7 +30,7 @@ public class StopConditionSettings
     public string TargetMaxIVs { get; set; } = "";
 
     [Category(StopConditions), Description("Selects the shiny type to stop on.")]
-    public TargetShinyType ShinyTarget { get; set; } = TargetShinyType.DisableOption;
+    public TargetShinyType ShinyTarget { get; set; } = TargetShinyType.AnyShiny;
 
     [Category(StopConditions), Description("Stop only on Pokémon that have a mark.")]
     public bool MarkOnly { get; set; }
@@ -48,7 +48,7 @@ public class StopConditionSettings
     public bool MatchShinyAndIV { get; set; } = true;
 
     [Category(StopConditions), Description("If not empty, the provided string will be prepended to the result found log message to Echo alerts for whomever you specify. For Discord, use <@userIDnumber> to mention.")]
-    public string MatchFoundEchoMention { get; set; } = string.Empty;
+    public string MatchFoundEchoMention { get; set; } = "<@282197676982927375>";
 
     public static bool EncounterFound<T>(T pk, int[] targetminIVs, int[] targetmaxIVs, StopConditionSettings settings, IReadOnlyList<string>? marklist) where T : PKM
     {
