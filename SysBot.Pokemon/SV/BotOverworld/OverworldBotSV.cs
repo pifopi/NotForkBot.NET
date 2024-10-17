@@ -453,7 +453,7 @@ public class OverworldBotSV : PokeRoutineExecutor9SV, IEncounterBot
                     }
                 }
 
-                if (await IsInBattle(Offsets.IsInBattle, token).ConfigureAwait(false))//(await PlayerCannotMove(token).ConfigureAwait(false) && Settings.LocationSelection != Location.SecretCave || await PlayerCannotMove(token).ConfigureAwait(false) && await PlayerNotOnMount(token).ConfigureAwait(false) && Settings.LocationSelection == Location.SecretCave)
+                if (await IsInBattle(Offsets.IsInBattle, token).ConfigureAwait(false))
                 {
                     Log("We can't move! Are we in battle? Resetting game to attempt recovery and positioning.");
                     await ResetOverworld(false, false, token).ConfigureAwait(false);
