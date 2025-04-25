@@ -5,7 +5,7 @@
 
 For specific support for this fork of ForkBot's fork of kwsch's SysBot.NET repo feel free to join! (No support will be provided in the official PKHeX or PA Discord, please don't bother the devs)
 
-[Support Server: Rosé Garden](https://discord.gg/G23Mx85Mdz)
+[Support Server: White Room](https://discord.gg/x5nfcaGYVH)
 
 [USB-Botbase](https://github.com/zyro670/usb-botbase) client for remote USB control for this fork.
 
