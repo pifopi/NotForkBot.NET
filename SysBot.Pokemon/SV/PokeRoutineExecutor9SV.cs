@@ -183,18 +183,15 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
         // Open game.
         await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
 
-        // Menus here can go in the order: Update Prompt -> Profile -> DLC check -> Unable to use DLC.
+        // Menus here can go in the order: Update Prompt -> Profile -> Starts Game
         //  The user can optionally turn on the setting if they know of a breaking system update incoming.
         if (timing.AvoidSystemUpdate)
         {
+            await Task.Delay(1_000, token).ConfigureAwait(false); // Reduce the chance of misclicking here.
             await Click(DUP, 0_600, token).ConfigureAwait(false);
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
         }
 
-        await Click(A, 1_000 + timing.ExtraTimeCheckDLC, token).ConfigureAwait(false);
-        // If they have DLC on the system and can't use it, requires an UP + A to start the game.
-        // Should be harmless otherwise since they'll be in loading screen.
-        await Click(DUP, 0_600, token).ConfigureAwait(false);
         await Click(A, 0_600, token).ConfigureAwait(false);
 
         Log("Restarting the game!");
@@ -282,16 +279,6 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
 
 
     // Zyro additions
-
-    public async Task DaySkipSV(CancellationToken token) => await SwitchConnection.SendAsync(SwitchCommand.DaySkip(true), token).ConfigureAwait(false);
-    public async Task TimeSkipFwd(CancellationToken token) => await SwitchConnection.SendAsync(SwitchCommand.TimeSkipForward(true), token).ConfigureAwait(false);
-    public async Task TimeSkipBwd(CancellationToken token) => await SwitchConnection.SendAsync(SwitchCommand.TimeSkipBack(true), token).ConfigureAwait(false);
-    public async Task ResetTimeSV(CancellationToken token) => await SwitchConnection.SendAsync(SwitchCommand.ResetTime(true), token).ConfigureAwait(false);
-    public async Task SetDateTime(ulong date, CancellationToken token)
-    {
-        var command = Encoding.ASCII.GetBytes($"setCurrentTime {date}{(true ? "\r\n" : "")}");
-        await Connection.SendAsync(command, token).ConfigureAwait(false);
-    }
 
     public async Task SVSaveGameOverworld(CancellationToken token)
     {
@@ -613,7 +600,7 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
         string nature = $"{(Nature)pk.Nature}";
         string genderSymbol = pk.Gender == 0 ? "♂" : pk.Gender == 1 ? "♀" : "⚥";
         string genderText = $"{(Gender)pk.Gender}";
-        string ability = $"{GameInfo.GetStrings(1).Ability[pk.Ability]}";
+        string ability = $"{GameInfo.GetStrings("en").Ability[pk.Ability]}";
 
         if (pk.IV_HP == 31 && pk.IV_ATK == 31 && pk.IV_DEF == 31 && pk.IV_SPA == 31 && pk.IV_SPD == 31 && pk.IV_SPE == 31)
             MaxIV = "6IV";

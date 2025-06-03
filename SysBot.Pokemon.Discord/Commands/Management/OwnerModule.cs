@@ -98,9 +98,7 @@ public class OwnerModule<T> : SudoModule<T> where T : PKM, new()
     {
         await ReplyAsync("Leaving all servers.").ConfigureAwait(false);
         foreach (var guild in Context.Client.Guilds)
-        {
             await guild.LeaveAsync().ConfigureAwait(false);
-        }
     }
 
     [Command("sudoku")]

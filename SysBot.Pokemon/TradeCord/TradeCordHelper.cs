@@ -19,18 +19,15 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
     private readonly TradeCordSettings Settings;
     public static bool TCInitialized;
     public static bool VacuumLock;
-    public static Dictionary<ulong, int> TradeCordTrades = new();
-    private static readonly Dictionary<ulong, TCUser> UserDict = new();
-    public static readonly Dictionary<ulong, DateTime> TradeCordCooldownDict = new();
-    public static readonly Dictionary<ulong, List<DateTime>> UserCommandTimestamps = new();
-    public static readonly HashSet<ulong> MuteList = new();
+    public static Dictionary<ulong, int> TradeCordTrades = [];
+    private static readonly Dictionary<ulong, TCUser> UserDict = [];
+    public static readonly Dictionary<ulong, DateTime> TradeCordCooldownDict = [];
+    public static readonly Dictionary<ulong, List<DateTime>> UserCommandTimestamps = [];
+    public static readonly HashSet<ulong> MuteList = [];
     public static DateTime EventVoteTimer = new();
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public TradeCordHelper(TradeCordSettings settings) : base()
-    {
-        Settings = settings;
-    }
+    public TradeCordHelper(TradeCordSettings settings) : base() => Settings = settings;
 
     public sealed class Results
     {
@@ -52,7 +49,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         public TCUser Giftee { get; set; } = new();
         public string Item { get; set; } = string.Empty;
 
-        public List<SQLCommand> SQLCommands { get; set; } = new();
+        public List<SQLCommand> SQLCommands { get; set; } = [];
         public ulong[]? UsersToPing { get; set; }
     }
 
@@ -371,7 +368,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                 TCItems item;
                 if (Rng.ShinyCharmRNG > 10)
                 {
-                    var vals = Enum.GetValues(typeof(TCItems));
+                    var vals = Enum.GetValues<TCItems>();
                     do
                     {
                         item = (TCItems)vals.GetValue(new Random().Next(vals.Length))!;
@@ -498,7 +495,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
 
         bool FuncList()
         {
-            List<string> filters = input.Contains('=') ? input.Split('=').ToList() : new();
+            List<string> filters = input.Contains('=') ? [.. input.Split('=')] : new();
             if (filters.Count > 0)
             {
                 filters.RemoveAt(0);
@@ -571,7 +568,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                 }
             }
 
-            result.Message = string.Join(", ", input == "Shinies" ? countSh.OrderBy(x => int.Parse(x.Split(' ')[0].Trim(new char[] { '(', '_', ')' }))) : count.OrderBy(x => int.Parse(x.Split(' ')[0].Trim(new char[] { '(', '_', ')' }))));
+            result.Message = string.Join(", ", input == "Shinies" ? countSh.OrderBy(x => int.Parse(x.Split(' ')[0].Trim(['(', '_', ')']))) : count.OrderBy(x => int.Parse(x.Split(' ')[0].Trim(['(', '_', ')']))));
             var listName = input == "Shinies" ? "Shiny Pokémon" : input == "All" ? "Pokémon" : input == "Egg" ? "Eggs" : $"{input} List";
             var listCount = input == "Shinies" ? $"★{countSh.Count}" : $"{count.Count}, ★{countSh.Count}";
             result.EmbedName = $"{user.UserInfo.Username}'s {listName} (Total: {listCount})";
@@ -917,11 +914,11 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                 return false;
             }
 
-            HashSet<int> newIDParse = new();
+            HashSet<int> newIDParse = [];
             foreach (var caught in m_user.Catches)
                 newIDParse.Add(caught.Key);
 
-            var newID = Indexing(newIDParse.OrderBy(x => x).ToArray());
+            var newID = Indexing([.. newIDParse.OrderBy(x => x)]);
             bool isLegend = IsLegendaryOrMythical(pk.Species);
 
             var names = CatchValues.Replace(" ", "").Split(',');
@@ -971,8 +968,8 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         result.Message = $"\nYour trainer info was set to the following:" +
                          $"\n**OT:** {user.TrainerInfo.OTName}" +
                          $"\n**OTGender:** {user.TrainerInfo.OTGender}" +
-                         $"\n**Display TID:** {tr.GetTrainerTID7()}" +
-                         $"\n**Display SID:** {tr.GetTrainerSID7()}" +
+                         $"\n**Display TID:** {tr.TID16}" +
+                         $"\n**Display SID:** {tr.SID16}" +
                          $"\n**Language:** {user.TrainerInfo.Language}";
         result.Success = true;
         result.User = user;
@@ -988,8 +985,8 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         var tr = new SimpleTrainerInfo(Game) { TID16 = user.TrainerInfo.TID16, SID16 = user.TrainerInfo.SID16 };
         result.Message = $"\n**OT:** {user.TrainerInfo.OTName}" +
                          $"\n**OTGender:** {user.TrainerInfo.OTGender}" +
-                         $"\n**Display TID:** {tr.GetTrainerTID7()}" +
-                         $"\n**Display SID:** {tr.GetTrainerSID7()}" +
+                         $"\n**Display TID:** {tr.TID16}" +
+                         $"\n**Display SID:** {tr.SID16}" +
                          $"\n**Language:** {user.TrainerInfo.Language}" +
                          $"\n**Shiny Charm:** {count}" +
                          $"\n**UTC Time Offset:** {user.UserInfo.TimeZoneOffset}" +
@@ -1010,14 +1007,14 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                 return false;
             }
 
-            List<string> names = new();
+            List<string> names = [];
             foreach (var fav in favs)
             {
                 var match = catches[fav.ID];
                 names.Add(match.Shiny ? $"(__{match.ID}__) {match.Species}{match.Form}" : $"({match.ID}) {match.Species}{match.Form}");
             }
 
-            result.Message = string.Join(", ", names.OrderBy(x => int.Parse(x.Split(' ')[0].Trim(new char[] { '(', '_', ')' }))));
+            result.Message = string.Join(", ", names.OrderBy(x => int.Parse(x.Split(' ')[0].Trim(['(', '_', ')']))));
             return true;
         }
 
@@ -1127,14 +1124,14 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
             else if (input == "clear")
             {
                 user.Dex.DexCompletionCount += user.Perks.ActivePerks.Count;
-                user.Perks.ActivePerks = new();
+                user.Perks.ActivePerks = [];
                 user.Perks.SpeciesBoost = 0;
                 var namesC = new string[] { "@perks", "@species_boost", "@user_id" };
                 var objC = new object[] { string.Empty, 0, user.UserInfo.UserID };
                 result.SQLCommands.Add(DBCommandConstructor("perks", "perks = ?, species_boost = ?", "where user_id = ?", namesC, objC, SQLTableContext.Update));
 
-                namesC = new string[] { "@dex_count", "@user_id" };
-                objC = new object[] { user.Dex.DexCompletionCount, user.UserInfo.UserID };
+                namesC = ["@dex_count", "@user_id"];
+                objC = [user.Dex.DexCompletionCount, user.UserInfo.UserID];
                 result.SQLCommands.Add(DBCommandConstructor("dex", "dex_count = ?", "where user_id = ?", namesC, objC, SQLTableContext.Update));
 
                 result.Message = "All active perks cleared!";
@@ -1197,8 +1194,8 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
             var obj = new object[] { arrStr, user.UserInfo.UserID };
             result.SQLCommands.Add(DBCommandConstructor("perks", "perks = ?", "where user_id = ?", names, obj, SQLTableContext.Update));
 
-            names = new string[] { "@dex_count", "@user_id" };
-            obj = new object[] { user.Dex.DexCompletionCount, user.UserInfo.UserID };
+            names = ["@dex_count", "@user_id"];
+            obj = [user.Dex.DexCompletionCount, user.UserInfo.UserID];
             result.SQLCommands.Add(DBCommandConstructor("dex", "dex_count = ?", "where user_id = ?", names, obj, SQLTableContext.Update));
 
             result.Message = $"{(count > 1 ? $"Added {count} perk {(count > 1 ? "points" : "point")} to {perkVal}!" : $"{perkVal} perk added!")}";
@@ -1343,7 +1340,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                 result.Message = "You don't have an active buddy!";
                 return false;
             }
-            else if (WordFilter.IsFiltered(input, out _))
+            else if (WordFilter.IsFiltered(input, out _, GetContext()))
             {
                 result.Message = "Nickname triggered the word filter. Please choose a different nickname.";
                 return false;
@@ -1392,12 +1389,12 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
             var obj = new object[] { user.Buddy.Nickname, user.UserInfo.UserID };
             result.SQLCommands.Add(DBCommandConstructor("buddy", "name = ?", "where user_id = ?", names, obj, SQLTableContext.Update));
 
-            names = new string[] { "@nickname", "@user_id", "@id" };
-            obj = new object[] { user.Buddy.Nickname, user.UserInfo.UserID, match.ID };
+            names = ["@nickname", "@user_id", "@id"];
+            obj = [user.Buddy.Nickname, user.UserInfo.UserID, match.ID];
             result.SQLCommands.Add(DBCommandConstructor("catches", "nickname = ?", "where user_id = ? and id = ?", names, obj, SQLTableContext.Update));
 
-            names = new string[] { "@data", "@user_id", "@id" };
-            obj = new object[] { pk.DecryptedPartyData, user.UserInfo.UserID, match.ID };
+            names = ["@data", "@user_id", "@id"];
+            obj = [pk.DecryptedPartyData, user.UserInfo.UserID, match.ID];
             result.SQLCommands.Add(DBCommandConstructor("binary_catches", "data = ?", "where user_id = ? and id = ?", names, obj, SQLTableContext.Update));
 
             return true;
@@ -1515,12 +1512,12 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
 
             user.Buddy.Ability = (Ability)pk.Ability;
             user.Buddy.Nickname = pk.Nickname;
-            names = new string[] { "@name", "@ability", "@user_id" };
-            obj = new object[] { pk.Nickname, pk.Ability, user.UserInfo.UserID };
+            names = ["@name", "@ability", "@user_id"];
+            obj = [pk.Nickname, pk.Ability, user.UserInfo.UserID];
             result.SQLCommands.Add(DBCommandConstructor("buddy", "name = ?, ability = ?", "where user_id = ?", names, obj, SQLTableContext.Update));
 
-            names = new string[] { "@data", "@user_id", "@id" };
-            obj = new object[] { pk.DecryptedPartyData, user.UserInfo.UserID, match.ID };
+            names = ["@data", "@user_id", "@id"];
+            obj = [pk.DecryptedPartyData, user.UserInfo.UserID, match.ID];
             result.SQLCommands.Add(DBCommandConstructor("binary_catches", "data = ?", "where user_id = ? and id = ?", names, obj, SQLTableContext.Update));
 
             result.Message = $"{oldName} evolved into {(pk.IsShiny ? $"**{species + form}**" : species + form)}!";
@@ -1863,7 +1860,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                 return false;
             }
 
-            List<int> idList = new();
+            List<int> idList = [];
             foreach (var entry in items)
             {
                 user.Items.Remove(entry);
@@ -1998,7 +1995,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         var finalEggName = eggSpeciesName + eggForm;
 
         pk.ResetPartyStats();
-        pk.ClearHyperTraining();
+        pk.SetSuggestedHyperTrainingData();
         msg = $"&^&You got {(pk.IsShiny ? "a **shiny egg**" : "an egg")} from the daycare! Welcome, {(pk.IsShiny ? $"**{finalEggName}**" : $"{finalEggName}")}!";
         return pk;
     }
@@ -2007,12 +2004,12 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
     {
         string formHack = string.Empty;
         var formEdgeCaseRng = Random.Next(11);
-        string[] mewOverride = { "\n.Version=34", "\n.Version=3" };
-        int[] ignoreForm = { 382, 383, 646, 716, 717, 778, 800, 845, 875, 877, 888, 889, 890, 898 };
+        string[] mewOverride = ["\n.Version=34", "\n.Version=3"];
+        int[] ignoreForm = [382, 383, 646, 716, 717, 778, 800, 845, 875, 877, 888, 889, 890, 898];
         Shiny shiny = Rng.ShinyRNG >= 200 - Settings.SquareShinyRate ? Shiny.AlwaysSquare : Rng.ShinyRNG >= 200 - Settings.StarShinyRate ? Shiny.AlwaysStar : Shiny.Never;
         string shinyType = shiny is Shiny.AlwaysSquare ? "\nShiny: Square" : shiny is Shiny.AlwaysStar ? "\nShiny: Star" : "";
         if (Rng.SpeciesRNG is (ushort)Species.NidoranF or (ushort)Species.NidoranM)
-            speciesName = speciesName.Remove(speciesName.Length - 1);
+            speciesName = speciesName[..^1];
 
         TradeExtensions<T>.FormOutput(Rng.SpeciesRNG, 0, out string[] forms);
         var formIDs = Dex[Rng.SpeciesRNG].ToArray();
@@ -2085,7 +2082,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         string shinyType = shiny is not Shiny.Never ? "\nShiny: Yes" : "";
 
         if (Rng.SpeciesRNG is (ushort)Species.NidoranF or (ushort)Species.NidoranM)
-            speciesName = speciesName.Remove(speciesName.Length - 1);
+            speciesName = speciesName[..^1];
 
         TradeExtensions<T>.FormOutput(Rng.SpeciesRNG, 0, out string[] forms);
         var formIDs = Dex[Rng.SpeciesRNG].ToArray();
@@ -2139,7 +2136,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         string shinyType = shiny is not Shiny.Never ? "\nShiny: Yes" : "";
 
         if (Rng.SpeciesRNG is (ushort)Species.NidoranF or (ushort)Species.NidoranM)
-            speciesName = speciesName.Remove(speciesName.Length - 1);
+            speciesName = speciesName[..^1];
 
         TradeExtensions<T>.FormOutput(Rng.SpeciesRNG, 0, out string[] forms);
         var formIDs = Dex[Rng.SpeciesRNG].ToArray();
@@ -2219,8 +2216,8 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
                     var objH = new object[] { pk.Nickname, user.UserInfo.UserID };
                     result.SQLCommands.Add(DBCommandConstructor("buddy", "name = ?", "where user_id = ?", namesH, objH, SQLTableContext.Update));
 
-                    namesH = new string[] { "@nickname", "@is_egg", "@user_id", "@id" };
-                    objH = new object[] { pk.Nickname, 0, user.UserInfo.UserID, match.ID };
+                    namesH = ["@nickname", "@is_egg", "@user_id", "@id"];
+                    objH = [pk.Nickname, 0, user.UserInfo.UserID, match.ID];
                     result.SQLCommands.Add(DBCommandConstructor("catches", "nickname = ?, is_egg = ?", "where user_id = ? and id = ?", namesH, objH, SQLTableContext.Update));
 
                     user.Buddy.Nickname = pk.Nickname;
@@ -2283,7 +2280,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         {
             user.Dex.Entries.Add(species);
             string entryStr = ArrayStringify(user.Dex.Entries.ToArray());
-            string[] names = new string[] { "@entries", "@user_id" };
+            string[] names = ["@entries", "@user_id"];
             var obj = new object[] { entryStr, user.UserInfo.UserID };
             result.SQLCommands.Add(DBCommandConstructor("dex", "entries = ?", "where user_id = ?", names, obj, SQLTableContext.Update));
         }
@@ -2304,7 +2301,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
             }
 
             msg += user.Dex.DexCompletionCount < 20 ? $" Level increased!{(sc ? " Received a ★**Shiny Charm**★" : "")}" : " Highest level achieved!";
-            string[] names = new string[] { "@entries", "@dex_count", "@user_id" };
+            string[] names = ["@entries", "@dex_count", "@user_id"];
             var obj = new object[] { string.Empty, user.Dex.DexCompletionCount, user.UserInfo.UserID };
             result.SQLCommands.Add(DBCommandConstructor("dex", "entries = ?, dex_count = ?", "where user_id = ?", names, obj, SQLTableContext.Update));
         }
@@ -2322,12 +2319,12 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         bool canGmax = set is not null && set.CanGigantamax;
         if (speciesName.Contains("Nidoran"))
         {
-            speciesName = speciesName.Remove(speciesName.Length - 1);
+            speciesName = speciesName[..^1];
             form = pk.Species is (ushort)Species.NidoranF ? "-F" : "-M";
         }
 
-        int[] array = result.User.Catches.Select(x => x.Value.ID).ToArray();
-        array = array.OrderBy(x => x).ToArray();
+        int[] array = [.. result.User.Catches.Select(x => x.Value.ID)];
+        array = [.. array.OrderBy(x => x)];
         index = Indexing(array);
         result.User.Catches.Add(index, new() { Species = speciesName, Nickname = pk.Nickname, Ball = $"{(Ball)pk.Ball}", Egg = pk.IsEgg, Form = form, ID = index, Shiny = pk.IsShiny, Traded = false, Favorite = false, Legendary = isLegend, Event = pk.FatefulEncounter, Gmax = canGmax });
 
@@ -2336,7 +2333,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
         result.SQLCommands.Add(DBCommandConstructor("catches", CatchValues, "", names, obj, SQLTableContext.Insert));
 
         names = BinaryCatchesValues.Replace(" ", "").Split(',');
-        obj = new object[] { result.User.UserInfo.UserID, index, pk.DecryptedPartyData };
+        obj = [result.User.UserInfo.UserID, index, pk.DecryptedPartyData];
         result.SQLCommands.Add(DBCommandConstructor("binary_catches", BinaryCatchesValues, "", names, obj, SQLTableContext.Insert));
     }
 
@@ -2366,7 +2363,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
 
     public string GetDexFlavorText(ushort species, byte form, bool gmax) => GetDexFlavorFromTable(species, form, gmax);
 
-    private static bool ValidateOT(TCTrainerInfo info) => info.OTName.Length <= Legal.GetMaxLengthOT(8, (LanguageID)Enum.Parse(typeof(LanguageID), info.Language));
+    private static bool ValidateOT(TCTrainerInfo info) => info.OTName.Length <= Legal.GetMaxLengthOT(8, Enum.Parse<LanguageID>(info.Language));
 
     private static SQLCommand DBCommandConstructor(string table, string vals, string filter, string[] names, object[] values, SQLTableContext ctx)
     {
@@ -2385,5 +2382,18 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
             Names = names,
             Values = values,
         };
+    }
+
+    private static EntityContext GetContext()
+    {
+        var dict = new Dictionary<Type, EntityContext>
+         {
+             { typeof(PK8), EntityContext.Gen8 },
+             { typeof(PB8), EntityContext.Gen8b },
+             { typeof(PA8), EntityContext.Gen8a },
+             { typeof(PK9), EntityContext.Gen9 },
+         };
+
+        return dict[typeof(T).GetType()];
     }
 }

@@ -17,8 +17,3 @@ public interface IEncounterBot : ICountBot
 {
     public void Acknowledge();
 }
-
-public interface IArceusBot : ICountBot
-{
-    public void AcknowledgeConfirmation();
-}

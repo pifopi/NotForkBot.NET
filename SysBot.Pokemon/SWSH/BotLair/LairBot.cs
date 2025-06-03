@@ -834,7 +834,7 @@ public sealed class LairBotSWSH : EncounterBotSWSH
             await Click(A, 1_000 + config.Timings.ExtraTimeLoadProfile, token).ConfigureAwait(false);
         }
 
-        await Click(A, 1_000 + config.Timings.ExtraTimeCheckDLC, token).ConfigureAwait(false);
+        await Click(A, 1_000, token).ConfigureAwait(false);
         // If they have DLC on the system and can't use it, requires an UP + A to start the game.
         // Should be harmless otherwise since they'll be in loading screen.
         await Click(DUP, 0_600, token).ConfigureAwait(false);

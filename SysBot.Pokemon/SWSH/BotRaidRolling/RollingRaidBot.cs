@@ -293,7 +293,7 @@ public class RollingRaidBotSWSH : PokeRoutineExecutor8SWSH, ICountBot
         if (ready && Config.Connection.Protocol == SwitchProtocol.USB && Settings.AirplaneQuitout) // Need at least one player to be ready
             airplaneUsable = true;
 
-        LobbyPlayers = new LobbyPlayerInfo[] { new(), new(), new(), new() };
+        LobbyPlayers = [new(), new(), new(), new()];
         for (int i = 0; i < 4; i++)
             PlayerReady[i] = false;
 
@@ -419,7 +419,7 @@ public class RollingRaidBotSWSH : PokeRoutineExecutor8SWSH, ICountBot
                 var nameData = await SwitchConnection.ReadBytesAbsoluteAsync(playerNameOfs + (player * 0xD0), 24, token).ConfigureAwait(false);
                 if (nameData is not null && nameData.Length is not 0) // Offset failed, probably YComm or bad timings.
                 {
-                    nameData = nameData.Reverse().SkipWhile((x, i) => x == 0 && nameData[nameData.Length - i - 2] == 0).Reverse().ToArray();
+                    nameData = [.. nameData.Reverse().SkipWhile((x, i) => x == 0 && nameData[nameData.Length - i - 2] == 0).Reverse()];
                     LobbyPlayers[player].Name = Encoding.Unicode.GetString(nameData).Replace("�", "");
                 }
             }
@@ -431,7 +431,7 @@ public class RollingRaidBotSWSH : PokeRoutineExecutor8SWSH, ICountBot
             LobbyPlayers[player].Poke = (PK8?)EntityFormat.GetFromBytes(pkData);
 
             var pk = LobbyPlayers[player].Poke;
-            if (pk is not null && pk.Language != (int)LanguageID.Hacked)
+            if (pk is not null && pk.Language != (int)LanguageID.None)
             {
                 var la = new LegalityAnalysis(pk);
                 var shinySymbol = pk.IsShiny && (pk.ShinyXor is 0 || pk.FatefulEncounter) ? "■" : pk.IsShiny ? "★" : "";

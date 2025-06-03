@@ -16,4 +16,7 @@ public class FossilSettings
     /// </summary>
     [Category(Fossil), Description("Toggle for injecting fossil pieces.")]
     public bool InjectWhenEmpty { get; set; }
+
+    [Category(Fossil), Description("When enabled, the bot will only stop when encounter has a Scale of XXXS or XXXL.")]
+    public bool MinMaxScaleOnly { get; set; } = false;
 }

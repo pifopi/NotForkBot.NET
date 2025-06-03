@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Text.RegularExpressions;
 using PKHeX.Core;
 using PKHeX.Core.AutoMod;
@@ -14,7 +14,7 @@ namespace SysBot.Pokemon;
 
 public class TradeExtensions<T> where T : PKM, new()
 {
-    private static readonly object _syncLog = new();
+    private static readonly Lock _syncLog = new();
     public static bool CoordinatesSet = false;
     public static ulong CoordinatesOffset = 0;
     public static byte[] XCoords = [0];
@@ -94,7 +94,9 @@ public class TradeExtensions<T> where T : PKM, new()
             return new Ball[1];
         }
 
-        var legalBalls = BallApplicator.GetLegalBalls(pk).ToList();
+        var balls = Enum.GetValues<Ball>();
+        BallApplicator.GetLegalBalls(balls, pk);
+        var legalBalls = balls.ToList();
         if (!legalBalls.Contains(Ball.Master))
         {
             showdownList.Insert(1, "Ball: Master");
@@ -144,12 +146,12 @@ public class TradeExtensions<T> where T : PKM, new()
         }
         pkm.Ball = 21;
         pkm.IVs = [31, nickname.Contains(dittoStats[0]) ? 0 : 31, 31, nickname.Contains(dittoStats[1]) ? 0 : 31, nickname.Contains(dittoStats[2]) ? 0 : 31, 31];
-        pkm.ClearHyperTraining();
+        pkm.SetSuggestedHyperTrainingData();
         TrashBytes(pkm, new LegalityAnalysis(pkm));
         pkm.ClearNickname();
     }
 
-    public static void EggTrade(PKM pk, IBattleTemplate template)
+    public static void EggTrade(PKM pk, IBattleTemplate template, Ball ball = Ball.None)
     {
         pk.IsNicknamed = true;
         pk.Nickname = pk.Language switch
@@ -193,7 +195,7 @@ public class TradeExtensions<T> where T : PKM, new()
         pk.HandlingTrainerFriendship = 0;
         pk.ClearMemories();
         pk.StatNature = pk.Nature;
-        pk.SetEVs(new int[] { 0, 0, 0, 0, 0, 0 });
+        pk.SetEVs([0, 0, 0, 0, 0, 0]);
 
         pk.SetMarkings();
         pk.ClearRelearnMoves();
@@ -232,6 +234,8 @@ public class TradeExtensions<T> where T : PKM, new()
         pk = TrashBytes(pk);
         var la = new LegalityAnalysis(pk);
         var enc = la.EncounterMatch;
+        pk.SetSuggestedHyperTrainingData();
+        pk.SetSuggestedBall(enc, true, false, ball);
         pk.CurrentFriendship = enc is IHatchCycle s ? s.EggCycles : pk.PersonalInfo.HatchCycles;
 
         Span<ushort> relearn = stackalloc ushort[4];
@@ -406,6 +410,8 @@ public class TradeExtensions<T> where T : PKM, new()
         if (mgPkm is not null && result is EntityConverterResult.Success)
         {
             var enc = new LegalityAnalysis(mgPkm).EncounterMatch;
+            mgPkm.SetHandlerAndMemory(info, enc);
+
             if (mgPkm.TID16 is 0 && mgPkm.SID16 is 0)
             {
                 mgPkm.TID16 = info.TID16;
@@ -506,15 +512,17 @@ public class TradeExtensions<T> where T : PKM, new()
 
     public static bool DifferentFamily(IReadOnlyList<T> pkms)
     {
-        var criteriaList = new List<(ushort Species, byte Form)>();
-        foreach (var pkm in pkms)
+        var criteriaList = new List<(ushort, byte)>();
+        for (int i = 0; i < pkms.Count; i++)
         {
-            var tree = EvolutionTree.GetEvolutionTree(pkm.Context);
-            var validPreEvolutions = tree.Reverse.GetPreEvolutions(pkm.Species, pkm.Form).ToList();
-            criteriaList.Add((validPreEvolutions.Last().Species, validPreEvolutions.Last().Form));
+            var tree = EvolutionTree.GetEvolutionTree(pkms[i].Context);
+            var preEvos = tree.Reverse.GetPreEvolutions(pkms[i].Species, pkms[i].Form).ToList();
+            if (preEvos.Count == 0)
+                criteriaList.Add(tree.GetBaseSpeciesForm(pkms[i].Species, pkms[i].Form));
+            else criteriaList.Add(preEvos.First());
         }
 
-        bool different = criteriaList.Skip(1).Any(x => x.Species != criteriaList.First().Species);
+        bool different = criteriaList.Any(x => x.Item1 != criteriaList.First().Item1);
         return different;
     }
 

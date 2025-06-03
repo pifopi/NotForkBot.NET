@@ -53,9 +53,6 @@ public class ArceusBotSettings : IBotStateSettings, ICountSettings
         [Category(Arceus), Description("When enabled, the bot will teleport instead of walk/run for Outbreak/MMO Hunter.")]
         public bool TeleportToHunt { get; set; } = false;
 
-        [Category(Arceus), Description("When enabled, the bot will permute all possible results.")]
-        public bool Permute { get; set; } = false;
-
         [Category(Arceus), Description("When enabled, the bot will search for only an alpha shiny from a MMO.")]
         public bool AlphaShinyOnly { get; set; } = false;
 

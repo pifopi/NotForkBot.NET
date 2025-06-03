@@ -33,11 +33,11 @@ public class EchoModule<T> : ModuleBase<SocketCommandContext> where T : PKM, new
         var bots = SysCord<T>.Runner.Bots.Select(z => z.Bot);
         foreach (var b in bots)
         {
-            if (b is not IArceusBot x)
+            if (b is not IEncounterBot x)
                 continue;
             if (!b.Connection.Name.Contains(name) && !b.Connection.Label.Contains(name))
                 continue;
-            x.AcknowledgeConfirmation();
+            x.Acknowledge();
         }
 
         await ReplyAsync("Continuing.").ConfigureAwait(false);

@@ -144,7 +144,7 @@ public class EggBotSV : PokeRoutineExecutor9SV, IEncounterBot
                     pk = await ReadPokemonSV(Offsets.EggData, 344, token).ConfigureAwait(false);
                     if (waiting == 200)
                     {
-                        Log("3 minutes have passed without an egg.  Attempting full recovery.");
+                        Log("Several minutes have passed without an egg.  Attempting full recovery.");
                         await ReopenPicnic(token).ConfigureAwait(false);
                         await MakeSandwich(token).ConfigureAwait(false);
                         await ReopenPicnic(token).ConfigureAwait(false);
@@ -222,14 +222,15 @@ public class EggBotSV : PokeRoutineExecutor9SV, IEncounterBot
     private async Task<bool> CheckEncounter(string print, PK9 pk)
     {
         var token = CancellationToken.None;
-        string? url;
+        string? url = TradeExtensions<PK9>.PokeImg(pk, false, false);
+        //ResultsUtil.EncounterLog(print, url);
 
         if (!StopConditionSettings.EncounterFound(pk, DesiredMinIVs, DesiredMaxIVs, Hub.Config.StopConditions, null))
         {
             if (Hub.Config.StopConditions.ShinyTarget is TargetShinyType.AnyShiny or TargetShinyType.StarOnly or TargetShinyType.SquareOnly && pk.IsShiny)
             {
-                url = TradeExtensions<PK9>.PokeImg(pk, false, false);
                 EchoUtil.EchoEmbed("", print, url, "", false);
+                //ResultsUtil.EncounterLog(print, url);
             }
             return true; //No match, return true to keep scanning
         }
@@ -237,8 +238,8 @@ public class EggBotSV : PokeRoutineExecutor9SV, IEncounterBot
         if (Settings.MinMaxScaleOnly && pk.Scale > 0 && pk.Scale < 255)
         {
             {
-                url = TradeExtensions<PK9>.PokeImg(pk, false, false);
                 EchoUtil.EchoEmbed("", print, url, "", false);
+                //ResultsUtil.EncounterLog(print, url);
             }
             return true;
         }
@@ -267,8 +268,8 @@ public class EggBotSV : PokeRoutineExecutor9SV, IEncounterBot
             if ((Species)pk.Species is Species.Dunsparce or Species.Tandemaus && pk.EncryptionConstant % 100 != 0)
             {
                 {
-                    url = TradeExtensions<PK9>.PokeImg(pk, false, false);
                     EchoUtil.EchoEmbed("", print, url, "", false);
+                    //ResultsUtil.EncounterLog(print, url);
                 }
                 return true; // 1/100 condition unsatisfied, continue scanning
             }
@@ -276,13 +277,14 @@ public class EggBotSV : PokeRoutineExecutor9SV, IEncounterBot
 
         if (mode == ContinueAfterMatch.StopExit) // Stop & Exit: Condition satisfied.  Stop scanning and disconnect the bot
         {
-            url = TradeExtensions<PK9>.PokeImg(pk, false, false);
             EchoUtil.EchoEmbed(ping, print, url, "", true);
+            //ResultsUtil.EncounterLog(print, url);
             return false;
         }
 
         url = TradeExtensions<PK9>.PokeImg(pk, false, false);
         EchoUtil.EchoEmbed(ping, print, url, "", true);
+     //   ResultsUtil.EncounterLog(print, url);
 
         if (mode == ContinueAfterMatch.PauseWaitAcknowledge)
         {

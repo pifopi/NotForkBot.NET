@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 using PKHeX.Core;
 using PKHeX.Core.AutoMod;
-using static PKHeX.Core.AutoMod.Aesthetics;
 using System.Collections.Frozen;
 
 namespace SysBot.Pokemon;
@@ -34,7 +33,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
         pkm.StatNature = pkm.Nature;
         pkm.Move1_PPUps = pkm.Move2_PPUps = pkm.Move3_PPUps = pkm.Move4_PPUps = 0;
         pkm.SetMaximumPPCurrent(pkm.Moves);
-        pkm.ClearHyperTraining();
+        pkm.SetSuggestedHyperTrainingData();
 
         var enc = la.Info.EncounterMatch;
         var evoChain = la.Info.EvoChainsAllGens.Gen8.FirstOrDefault(x => x.Species == pkm.Species);
@@ -76,7 +75,8 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
             pkm.SetRandomIVs(static8N.FlawlessIVCount + 1);
         else if (pkm is PK8 pk8 && enc is IOverworldCorrelation8 ow)
         {
-            var criteria = EncounterCriteria.GetCriteria(template, pk8.PersonalInfo);
+            var mutation = EncounterMutationUtil.GetSuggested(EntityContext.Gen8, enc.LevelMax);
+            var criteria = EncounterCriteria.GetCriteria(template, pk8.PersonalInfo, mutation);
             List<int> IVs = [0, 0, 0, 0, 0, 0];
             if (enc is EncounterStatic8 static8)
             {
@@ -88,7 +88,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
                         while (IVs.FindAll(x => x == 31).Count < flawless)
                             IVs[Random.Next(IVs.Count)] = 31;
 
-                        pk8.IVs = new int[] { IVs[0], IVs[1], IVs[2], IVs[3], IVs[4], IVs[5] };
+                        pk8.IVs = [IVs[0], IVs[1], IVs[2], IVs[3], IVs[4], IVs[5]];
                         var encFlawless = Overworld8Search.GetFlawlessIVCount(enc, pk8.IVs, out uint seed);
                         APILegality.FindWildPIDIV8(pk8, shiny, encFlawless, seed);
                         if (ow.IsOverworldCorrelationCorrect(pk8))
@@ -134,7 +134,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
     {
         pkm.Move1_PPUps = pkm.Move2_PPUps = pkm.Move3_PPUps = pkm.Move4_PPUps = 0;
         pkm.SetMaximumPPCurrent(pkm.Moves);
-        pkm.ClearHyperTraining();
+        pkm.SetSuggestedHyperTrainingData();
 
         var la = new LegalityAnalysis(pkm);
         var enc = la.Info.EncounterMatch;
@@ -185,7 +185,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
     {
         pkm.Move1_PPUps = pkm.Move2_PPUps = pkm.Move3_PPUps = pkm.Move4_PPUps = 0;
         pkm.SetMaximumPPCurrent(pkm.Moves);
-        pkm.ClearHyperTraining();
+        pkm.SetSuggestedHyperTrainingData();
 
         var la = new LegalityAnalysis(pkm);
         var enc = la.Info.EncounterMatch;
@@ -274,7 +274,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
 
         var speciesName = SpeciesName.GetSpeciesNameGeneration(speciesID, 2, (byte)generation);
         if (speciesName.Contains("Nidoran"))
-            speciesName = speciesName.Remove(speciesName.Length - 1);
+            speciesName = speciesName[..^1];
 
         formName = speciesName switch
         {
@@ -292,11 +292,9 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
         var pk = (T)sav.GetLegal(template, out string result);
 
         var ballRngDC = Random.Next(1, 3);
-        pk.Ball = (byte)(ballRngDC is 1 ? balls[0] : balls[1]);
-        if (!pk.ValidBall())
-            pk.Ball = BallApplicator.ApplyBallLegalRandom(pk);
+        var ball = ballRngDC is 1 ? (Ball)balls[0] : (Ball)balls[1];
 
-        TradeExtensions<T>.EggTrade(pk, template);
+        TradeExtensions<T>.EggTrade(pk, template, ball);
         pk.SetAbilityIndex(Random.Next(Game is GameVersion.BDSP ? 2 : 3));
 
         pk.Nature = (Nature)Random.Next(25);
@@ -424,7 +422,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
         var result = EdgeCaseEvolutions(evoList, pk, (int)alcremie, form, (int)heldItem, tod);
         if (result != default && result.DayTime is not TimeOfDay.Any && result.DayTime != tod)
         {
-            msg = $"This Pokémon seems to like the {Enum.GetName(typeof(TimeOfDay), result.DayTime)!.ToLower()}.";
+            msg = $"This Pokémon seems to like the {Enum.GetName(result.DayTime)!.ToLower()}.";
             return false;
         }
         else if (result == default)
@@ -453,7 +451,9 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
                     clone.OriginalTrainerName = "Nishikigoi";
                     var trainer = new PokeTrainerDetails(clone);
                     var encShelm = new LegalityAnalysis(pk).EncounterMatch;
-                }; break;
+                    pk.SetHandlerAndMemory(trainer, encShelm);
+                }
+                ; break;
             case EvolutionType.Spin:
                 {
                     if ((int)heldItem >= 1109 && (int)heldItem <= 1115)
@@ -527,6 +527,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
             pk.MetLevel = 1;
             pk.SetEggMetData(GameVersion.UM, (GameVersion)version);
             enc = new LegalityAnalysis(pk).EncounterMatch;
+            pk.SetHandlerAndMemory(sav, enc);
             if (pk is PK8 pk8)
             {
                 pk8.HeightScalar = 0;
@@ -534,7 +535,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
             }
 
             if (pk.Ball is (int)Ball.Sport || (pk.WasEgg && pk.Ball is (int)Ball.Master))
-                pk.SetSuggestedBall(true);
+                pk.SetSuggestedBall(enc, true);
         }
 
         var index = pk.PersonalInfo.GetIndexOfAbility(pk.Ability);
@@ -740,7 +741,7 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
     protected bool CanGenerateEgg(ref TCUser user, out IReadOnlyList<EvoCriteria> criteria, out int[] balls, out bool update)
     {
         update = false;
-        criteria = new List<EvoCriteria>();
+        criteria = [];
         balls = new int[2];
         if (user.Daycare.Species1 is 0 || user.Daycare.Species2 is 0)
             return false;
@@ -795,11 +796,11 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
     private bool SameEvoTree(PKM pkm1, PKM pkm2)
     {
         var evos = EncounterOrigin.GetOriginChain(pkm1, 9);
-        var encs = EncounterGenerator.GetGenerator(Game).GetPossible(pkm1, evos, Game, EncounterTypeGroup.Egg).ToArray();
+        var encs = EncounterGenerator.GetGenerator(Game, 9).GetPossible(pkm1, evos, Game, EncounterTypeGroup.Egg).ToArray();
         var base1 = encs.Length > 0 ? encs[^1].Species : -1;
 
         evos = EncounterOrigin.GetOriginChain(pkm2, 9);
-        encs = EncounterGenerator.GetGenerator(Game).GetPossible(pkm2, evos, Game, EncounterTypeGroup.Egg).ToArray();
+        encs = [.. EncounterGenerator.GetGenerator(Game, 9).GetPossible(pkm2, evos, Game, EncounterTypeGroup.Egg)];
         var base2 = encs.Length > 0 ? encs[^1].Species : -2;
 
         return base1 == base2;
@@ -973,8 +974,9 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
     {
         var color = (PersonalColor)(Game is GameVersion.SWSH ? PersonalTable.SWSH.GetFormEntry(species, form).Color : Game is GameVersion.SV ? PersonalTable.SV.GetFormEntry(species, form).Color :
             PersonalTable.BDSP.GetFormEntry(species, form).Color);
-        return (ShinyMap[(Species)species] is PersonalColor.Blue or PersonalColor.Red or PersonalColor.Pink or PersonalColor.Purple or PersonalColor.Yellow) &&
-            (color is PersonalColor.Blue or PersonalColor.Red or PersonalColor.Pink or PersonalColor.Purple or PersonalColor.Yellow);
+        var shinyColor = Aesthetics.GetShinyColor(species, form);
+        return (shinyColor is PersonalColor.Blue or PersonalColor.Red or PersonalColor.Pink or PersonalColor.Purple or PersonalColor.Yellow) &&
+           (color is PersonalColor.Blue or PersonalColor.Red or PersonalColor.Pink or PersonalColor.Purple or PersonalColor.Yellow);
     }
 
     protected MysteryGift? MysteryGiftRng(TradeCordSettings settings)
@@ -1038,6 +1040,6 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
     public string[] TrainerInfoToStringArray(TCTrainerInfo info, GameVersion game)
     {
         var tr = new SimpleTrainerInfo(game) { TID16 = info.TID16, SID16 = info.SID16 };
-        return new string[] { $"OT: {info.OTName}\n", $"OTGender: {info.OTGender}\n", $"TID: {tr.GetTrainerTID7()}\n", $"SID: {tr.GetTrainerSID7()}\n", $"Language: {info.Language}\n" };
+        return [$"OT: {info.OTName}\n", $"OTGender: {info.OTGender}\n", $"TID: {tr.TID16}\n", $"SID: {tr.SID16}\n", $"Language: {info.Language}\n"];
     }
 }

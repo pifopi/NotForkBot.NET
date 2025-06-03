@@ -274,6 +274,8 @@ public class ExtraCommandUtil<T> where T : PKM, new()
             }
             else if (id.Contains("permute"))
             {
+                if (!id.Contains("permute_ready"))
+                    await component.DeferAsync().ConfigureAwait(false);
                 var service = id.Contains(';') ? id.Split(';')[1] : "";
                 await PermuteUtil.HandlePermuteRequestAsync(component, service, id).ConfigureAwait(false);
             }

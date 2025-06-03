@@ -3,6 +3,7 @@ using SysBot.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace SysBot.Pokemon;
 
@@ -12,7 +13,7 @@ namespace SysBot.Pokemon;
 /// <typeparam name="T">Type of data to be transmitted to the users</typeparam>
 public sealed record TradeQueueInfo<T> where T : PKM, new()
 {
-    private readonly object _sync = new();
+    private readonly Lock _sync = new();
     private readonly List<TradeEntry<T>> UsersInQueue = [];
     public readonly PokeTradeHub<T> Hub;
 
@@ -207,7 +208,7 @@ public sealed record TradeQueueInfo<T> where T : PKM, new()
             return UsersInQueue.Count(func);
     }
 
-    private void ClearTCTrade(IEnumerable<TradeEntry<T>> details)
+    private static void ClearTCTrade(IEnumerable<TradeEntry<T>> details)
     {
         var detail = details.FirstOrDefault(x => x.Type == PokeRoutineType.TradeCord);
         if (detail == default)

@@ -1,10 +1,10 @@
 ﻿using PKHeX.Core;
 using SysBot.Base;
-
 using SysBot.Pokemon.Discord;
 using SysBot.Pokemon.Z3;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -85,14 +85,14 @@ public sealed partial class Main : Form
         MinimumSize = Size;
         PG_Hub.SelectedObject = RunningEnvironment.Config;
 
-        var routines = ((PokeRoutineType[])Enum.GetValues(typeof(PokeRoutineType))).Where(z => RunningEnvironment.SupportsRoutine(z));
+        var routines = Enum.GetValues<PokeRoutineType>().Where(z => RunningEnvironment.SupportsRoutine(z));
         var list = routines.Select(z => new ComboItem(z.ToString(), (int)z)).ToArray();
         CB_Routine.DisplayMember = nameof(ComboItem.Text);
         CB_Routine.ValueMember = nameof(ComboItem.Value);
         CB_Routine.DataSource = list;
         CB_Routine.SelectedValue = (int)PokeRoutineType.FlexTrade; // default option
 
-        var protocols = (SwitchProtocol[])Enum.GetValues(typeof(SwitchProtocol));
+        var protocols = Enum.GetValues<SwitchProtocol>();
         var listP = protocols.Select(z => new ComboItem(z.ToString(), (int)z)).ToArray();
         CB_Protocol.DisplayMember = nameof(ComboItem.Text);
         CB_Protocol.ValueMember = nameof(ComboItem.Value);
@@ -100,15 +100,11 @@ public sealed partial class Main : Form
         CB_Protocol.SelectedIndex = (int)SwitchProtocol.WiFi; // default option
 
         LogUtil.Forwarders.Add(new TextBoxForwarder(RTB_Logs));
-        if (Config.Mode is not ProgramMode.LA)
-            Tab_Results.Dispose();
-        else 
-            ResultsUtil.Forwarders.Add(AppendResults);
     }
 
     private ProgramConfig GetCurrentConfiguration()
     {
-        Config.Bots = Bots.ToArray();
+        Config.Bots = [.. Bots];
         return Config;
     }
 
@@ -148,6 +144,8 @@ public sealed partial class Main : Form
     private void B_Start_Click(object sender, EventArgs e)
     {
         SaveCurrentConfig();
+        if (Bots.Count > 0 && !DaySkipDisclaimer())
+            return;
 
         LogUtil.LogInfo("Starting all bots...", "Form");
         RunningEnvironment.InitializeStart();
@@ -269,7 +267,7 @@ public sealed partial class Main : Form
         var cfg = BotConfigUtil.GetConfig<SwitchConnectionConfig>(ip, port);
         cfg.Protocol = (SwitchProtocol)WinFormsUtil.GetIndex(CB_Protocol);
 
-        var pk = new PokeBotState {Connection = cfg};
+        var pk = new PokeBotState { Connection = cfg };
         var type = (PokeRoutineType)WinFormsUtil.GetIndex(CB_Routine);
         pk.Initialize(type);
         return pk;
@@ -283,55 +281,47 @@ public sealed partial class Main : Form
 
     private void CB_Protocol_SelectedIndexChanged(object sender, EventArgs e)
     {
-        TB_IP.Visible = CB_Protocol.SelectedIndex == 0;
+        var isWifi = CB_Protocol.SelectedIndex == 0;
+        TB_IP.Visible = isWifi;
+        NUD_Port.ReadOnly = isWifi;
+
+        if (isWifi)
+            NUD_Port.Text = "6000";
     }
 
-    //Zyro additions
-    private void AppendResults(string message, string identity)
+    private bool DaySkipDisclaimer()
     {
-        var line = $"[{DateTime.Now:HH:mm:ss}] - {identity}: {message}{Environment.NewLine}";
-        if (InvokeRequired)
-            Invoke((MethodInvoker)(() => UpdateResults(line)));
-        else
-            UpdateResults(line);
-    }
+        var msg = "DISCLAIMER\n\n" +
+            "This bot routine programatically changes the console's NetworkSystemClock.\n\n" +
+            "While it will only set the clock within the system's allowed year range, " +
+            "and attempt to sync time using Cloudflare's NTP server, time desync between the console and servers is possible.\n\n" +
+            "Use at your own risk.";
 
-    private void UpdateResults(string line)
-    {
-        // ghetto truncate
-        if (RTB_Results.Lines.Length > 99_999)
-            RTB_Results.Lines = RTB_Results.Lines.Skip(25_0000).ToArray();
-
-        RTB_Results.AppendText(line);
-        RTB_Results.ScrollToCaret();
-    }
-
-    private void ContinueButton_Click(object sender, EventArgs e)
-    {
-        var bots = SysCord<PA8>.Runner.Bots.Select(z => z.Bot);
-        foreach (var b in bots)
+        for (int i = 0; i < Bots.Count; i++)
         {
-            if (b is not IArceusBot x)
-                continue;
-            x.AcknowledgeConfirmation();
-            ResultsUtil.Log("Acknowledged. Continuing...", "");
+            var bot = Bots[i];
+            switch (bot.InitialRoutine)
+            {
+                case PokeRoutineType.BoolBot:
+                    {
+                        if (Config.Hub.BoolSWSH.BoolType == BoolMode.Skipper)
+                            return WinFormsUtil.Prompt(MessageBoxButtons.OKCancel, msg) == DialogResult.OK;
+                    }
+                    ; break;
+                case PokeRoutineType.DenBot:
+                    {
+                        if (Config.Hub.DenSWSH.DenMode == DenMode.Skip)
+                            return WinFormsUtil.Prompt(MessageBoxButtons.OKCancel, msg) == DialogResult.OK;
+                    }
+                    ; break;
+                case PokeRoutineType.RollingRaid:
+                    {
+                        return WinFormsUtil.Prompt(MessageBoxButtons.OKCancel, msg) == DialogResult.OK;
+                    }
+                    ;
+                default: continue;
+            }
         }
-    }
-
-    private void TossButton_Click(object sender, EventArgs e)
-    {
-        var bots = SysCord<PA8>.Runner.Bots.Select(z => z.Bot);
-        foreach (var b in bots)
-        {
-            if (b is not IEncounterBot x)
-                continue;
-            x.Acknowledge();
-            ResultsUtil.Log("Acknowledged. Tossing now!", "");
-        }
-        if (Config.Hub.ArceusLA.OutbreakConditions.Permute)
-        {
-            RTB_Results.Clear();
-            ResultsUtil.Log("Clearing Results log for permutations!\n", "");
-        }
+        return true;
     }
 }

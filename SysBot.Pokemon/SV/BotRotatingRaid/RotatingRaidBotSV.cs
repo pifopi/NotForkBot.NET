@@ -1385,7 +1385,7 @@ public class RotatingRaidBotSV : PokeRoutineExecutor9SV, ICountBot
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
         }
 
-        await Click(A, 1_000 + timing.ExtraTimeCheckDLC, token).ConfigureAwait(false);
+        await Click(A, 1_000, token).ConfigureAwait(false);
         await Click(DUP, 0_600, token).ConfigureAwait(false);
         await Click(A, 0_600, token).ConfigureAwait(false);
 
@@ -1553,7 +1553,7 @@ public class RotatingRaidBotSV : PokeRoutineExecutor9SV, ICountBot
                     Settings.RaidEmbedParameters[a].TeraType = (MoveType)container.Raids[i].TeraType;
                     var pkinfo = Hub.Config.StopConditions.GetRaidPrintName(pk);
                     pkinfo += $"\nTera Type: {(MoveType)container.Raids[i].TeraType}";
-                    var strings = GameInfo.GetStrings(1);
+                    var strings = GameInfo.GetStrings("en");
                     var moves = new ushort[4] { container.Encounters[i].Move1, container.Encounters[i].Move2, container.Encounters[i].Move3, container.Encounters[i].Move4 };
                     var movestr = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}ㅤ{Environment.NewLine}")).TrimEnd(Environment.NewLine.ToCharArray());
                     var extramoves = string.Empty;

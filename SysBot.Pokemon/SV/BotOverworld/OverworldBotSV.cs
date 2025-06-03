@@ -578,19 +578,19 @@ public class OverworldBotSV : PokeRoutineExecutor9SV, IEncounterBot
         var token = CancellationToken.None;
         Settings.AddCompletedScans();
 
+        string? url = TradeExtensions<PK9>.PokeImg(pk, false, false);
         bool hasMark = StopConditionSettings.HasMark(pk, out RibbonIndex mark);
         string markmsg = hasMark ? $"{mark.ToString().Replace("Mark", "")}" : "";
         string markurl = string.Empty;
         if (hasMark)
             markurl = $"https://raw.githubusercontent.com/kwsch/PKHeX/master/PKHeX.Drawing.Misc/Resources/img/ribbons/ribbonmark{markmsg.ToLower()}.png";
 
-        string? url;
         if (!StopConditionSettings.EncounterFound(pk, DesiredMinIVs, DesiredMaxIVs, Hub.Config.StopConditions, UnwantedMarks))
         {
             if (Hub.Config.StopConditions.ShinyTarget is TargetShinyType.AnyShiny or TargetShinyType.StarOnly or TargetShinyType.SquareOnly && pk.IsShiny)
             {
-                url = TradeExtensions<PK9>.PokeImg(pk, false, false);
                 EchoUtil.EchoEmbed("", print, url, markurl, false);
+               // ResultsUtil.EncounterLog(print, url);
             }
 
             return (true, false); //No match, return true to keep scanning
@@ -703,8 +703,8 @@ public class OverworldBotSV : PokeRoutineExecutor9SV, IEncounterBot
         if (!satisfied)
         {
             Log(satmsg);
-            url = TradeExtensions<PK9>.PokeImg(pk, false, false);
             EchoUtil.EchoEmbed("", print, url, markurl, false);
+          //  ResultsUtil.EncounterLog(print, url);
             return (true, false);
         }
 
@@ -715,8 +715,8 @@ public class OverworldBotSV : PokeRoutineExecutor9SV, IEncounterBot
                 string segmsg = (Species)pk.Species is Species.Dunsparce or Species.Dudunsparce ? "2-Segment" : "Family Of 4";
                 string res3 = $"A non-special {segmsg} {(Species)pk.Species} has been found...\n";
                 Log(res3);
-                url = TradeExtensions<PK9>.PokeImg(pk, false, false);
                 EchoUtil.EchoEmbed("", print, url, "", false);
+               // ResultsUtil.EncounterLog(print, url);
                 return (true, false); // 1/100 condition unsatisfied, continue scanning
             }
 
@@ -729,15 +729,15 @@ public class OverworldBotSV : PokeRoutineExecutor9SV, IEncounterBot
         }
 
         var text = Settings.SpeciesToHunt.Replace(" ", "");
-        string[] monlist = text.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] monlist = text.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
         if (monlist.Length != 0)
         {
             bool huntedspecies = monlist.Contains($"{(Species)pk.Species}");
             if (!huntedspecies)
             {
                 Log("Undesired species found..");
-                url = TradeExtensions<PK9>.PokeImg(pk, false, false);
                 EchoUtil.EchoEmbed("", print, url, markurl, false);
+             //   ResultsUtil.EncounterLog(print, url);
                 return (true, false);
             }
         }
@@ -761,13 +761,13 @@ public class OverworldBotSV : PokeRoutineExecutor9SV, IEncounterBot
 
         if (mode == ContinueAfterMatch.StopExit) // Stop & Exit: Condition satisfied.  Stop scanning and disconnect the bot
         {
-            url = TradeExtensions<PK9>.PokeImg(pk, false, false);
             EchoUtil.EchoEmbed(ping, print, url, markurl, true);
+          //  ResultsUtil.EncounterLog(print, url);
             return (false, false);
         }
 
-        url = TradeExtensions<PK9>.PokeImg(pk, false, false);
         EchoUtil.EchoEmbed(ping, print, url, markurl, true);
+      //  ResultsUtil.EncounterLog(print, url);
 
         if (mode == ContinueAfterMatch.PauseWaitAcknowledge)
         {

@@ -77,7 +77,7 @@ public class DiscordTradeNotifier<T>(T data, PokeTradeTrainerInfo info, int code
                 }
 
                 var trademessage = $"Pokémon IVs: {emb.IV_HP}/{emb.IV_ATK}/{emb.IV_DEF}/{emb.IV_SPA}/{emb.IV_SPD}/{emb.IV_SPE}\n" +
-                    $"Ability: {GameInfo.GetStrings(1).Ability[emb.Ability]}\n" +
+                    $"Ability: {GameInfo.GetStrings("en").Ability[emb.Ability]}\n" +
                     $"{emb.Nature} Nature\n{scale}" +
                     (StopConditionSettings.HasMark((IRibbonIndex)emb, out RibbonIndex mark) ? $"\nPokémon Mark: {mark.ToString().Replace("Mark", "")}{Environment.NewLine}" : "");
 
@@ -152,7 +152,7 @@ public class DiscordTradeNotifier<T>(T data, PokeTradeTrainerInfo info, int code
                     }
 
                     var trademessage = $"Pokémon IVs: {emb.IV_HP}/{emb.IV_ATK}/{emb.IV_DEF}/{emb.IV_SPA}/{emb.IV_SPD}/{emb.IV_SPE}\n" +
-                        $"Ability: {GameInfo.GetStrings(1).Ability[emb.Ability]}\n" +
+                        $"Ability: {GameInfo.GetStrings("en").Ability[emb.Ability]}\n" +
                         $"{emb.Nature} Nature\n{scale}" +
                         (StopConditionSettings.HasMark((IRibbonIndex)emb, out RibbonIndex mark) ? $"\nPokémon Mark: {mark.ToString().Replace("Mark", "")}{Environment.NewLine}" : "");
 
@@ -251,8 +251,7 @@ public class DiscordTradeNotifier<T>(T data, PokeTradeTrainerInfo info, int code
             Description = "Here are all the Pokémon you dumped!",
         }.WithAuthor(x => { x.Name = "Pokémon Legends: Arceus Dump"; });
 
-        var ch = Trader.CreateDMChannelAsync().Result;
-        ch.SendFilesAsync(list, msg, false, embed: embed.Build()).ConfigureAwait(false);
+        Trader.SendFilesAsync(list, msg, false, embed: embed.Build()).ConfigureAwait(false);
     }
 
     public void SendEtumrepEmbed(PokeRoutineExecutor<T> routine, PokeTradeDetail<T> info, IReadOnlyList<PA8> pkms)

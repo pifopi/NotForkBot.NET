@@ -2,6 +2,7 @@
 using SysBot.Base;
 using System;
 using System.Collections.Generic;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
 using static SysBot.Base.SwitchButton;
@@ -73,7 +74,7 @@ public abstract class EncounterBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
     protected async Task<bool> HandleEncounter(PK8 pk, CancellationToken token)
     {
         encounterCount++;
-        var print = Hub.Config.StopConditions.GetPrintName(pk);
+        var print = Hub.Config.StopConditions.GetSpecialPrintName(pk);
         Log($"Encounter: {encounterCount}{Environment.NewLine}{print}{Environment.NewLine}");
 
         var folder = IncrementAndGetDumpFolder(pk);
@@ -81,6 +82,10 @@ public abstract class EncounterBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
             DumpPokemon(DumpSetting.DumpFolder, folder, pk);
 
         if (!StopConditionSettings.EncounterFound(pk, DesiredMinIVs, DesiredMaxIVs, Hub.Config.StopConditions, UnwantedMarks))
+            return false;
+
+        bool isFossil = EncounterIsFossil(pk);
+        if (isFossil && Settings.Fossil.MinMaxScaleOnly && pk.HeightScalar != 0 || isFossil && Settings.Fossil.MinMaxScaleOnly && pk.HeightScalar != 255)
             return false;
 
         if (Hub.Config.StopConditions.CaptureVideoClip)
@@ -102,6 +107,15 @@ public abstract class EncounterBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
         if (!string.IsNullOrWhiteSpace(Hub.Config.StopConditions.MatchFoundEchoMention))
             msg = $"{Hub.Config.StopConditions.MatchFoundEchoMention} {msg}";
         EchoUtil.Echo(msg);
+
+        bool hasMark = StopConditionSettings.HasScalarMark(pk, out RibbonIndex mark);
+        string markmsg = hasMark ? $"{mark.ToString().Replace("Mark", "")}" : "";
+        string markurl = string.Empty;
+        if (hasMark)
+            markurl = $"https://raw.githubusercontent.com/kwsch/PKHeX/master/PKHeX.Drawing.Misc/Resources/img/ribbons/ribbonmark{markmsg.ToLower()}.png";
+
+        var url = TradeExtensions<PK8>.PokeImg(pk, false, false);
+        EchoUtil.EchoEmbed("", print, url, markurl, false);
 
         if (mode == ContinueAfterMatch.StopExit)
             return true;
@@ -160,4 +174,6 @@ public abstract class EncounterBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
             await Click(A, 1_000, token).ConfigureAwait(false);
         }
     }
+
+    private bool EncounterIsFossil(PK8 pk) => pk.Species >= (int)Species.Dracozolt && pk.Species <= (int)Species.Arctovish;
 }

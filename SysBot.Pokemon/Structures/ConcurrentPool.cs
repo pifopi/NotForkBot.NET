@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace System.Collections.Concurrent;
 
@@ -11,8 +12,8 @@ namespace System.Collections.Concurrent;
 [DebuggerDisplay("Count={" + nameof(Count) + "}")]
 public class ConcurrentPool<T> where T : class
 {
-    private readonly object _syncLock = new();
-    private readonly List<T> _list = new();
+    private readonly Lock _syncLock = new();
+    private readonly List<T> _list = [];
 
     public void Add(T item)
     {

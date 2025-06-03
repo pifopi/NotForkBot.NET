@@ -515,6 +515,7 @@ public class PokeTradeBotLA : PokeRoutineExecutor8LA, ICountBot
         {
             if (await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 break;
+
             if (bctr++ % 3 == 0)
                 await Click(B, 0_100, token).ConfigureAwait(false);
 
@@ -676,6 +677,8 @@ public class PokeTradeBotLA : PokeRoutineExecutor8LA, ICountBot
         }
         else if (config.LedyQuitIfNoMatch)
         {
+            var nickname = offered.IsNicknamed ? $" (Nickname: \"{offered.Nickname}\")" : string.Empty;
+            poke.SendNotification(this, $"No match found for the offered {GameInfo.GetStrings("en").Species[offered.Species]}{nickname}.");
             return (toSend, PokeTradeResult.TrainerRequestBad);
         }
 
@@ -770,8 +773,10 @@ public class PokeTradeBotLA : PokeRoutineExecutor8LA, ICountBot
             ctr++;
             var hint = ctr == 1 ? " Please dump at least one (1) more Pokémon." : string.Empty;
             var msg = $"File {ctr}: {SpeciesName.GetSpeciesNameGeneration(pk.Species, 2, 8)} dumped successfully.{hint}";
+
             dumps.Add(pk);
             detail.SendNotification(this, msg);
+            await Task.Delay(1_000, token).ConfigureAwait(false);
         }
 
         Log($"Ended Etumrep Dump loop after processing {ctr} Pokémon.");

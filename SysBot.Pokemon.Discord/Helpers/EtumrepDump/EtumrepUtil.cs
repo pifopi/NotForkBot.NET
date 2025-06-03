@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Net.Security;
+using System.Net.NetworkInformation;
 using System.IO;
 using System.Text;
 using System.Linq;
@@ -14,6 +14,7 @@ using Discord.WebSocket;
 using Newtonsoft.Json;
 using PKHeX.Core;
 using SysBot.Base;
+using static SysBot.Pokemon.EtumrepDumpSettings;
 
 namespace SysBot.Pokemon.Discord;
 
@@ -26,7 +27,7 @@ public class EtumrepUtil
 
     internal class EtumrepUser
     {
-        internal EtumrepUser(TcpClient client, AuthenticatedStream stream, SocketMessageComponent component)
+        internal EtumrepUser(TcpClient client, NetworkStream stream, SocketMessageComponent component)
         {
             Client = client;
             Stream = stream;
@@ -37,7 +38,7 @@ public class EtumrepUtil
         }
 
         public TcpClient Client { get; }
-        public AuthenticatedStream Stream { get; }
+        public NetworkStream Stream { get; }
         public SocketMessageComponent Component { get; }
         public string BotName { get; }
         public string SeedCheckerName { get; }
@@ -70,7 +71,6 @@ public class EtumrepUtil
         var embed = new EmbedBuilder { Color = Color.Blue };
         try
         {
-            var dmCh = await user.CreateDMChannelAsync().ConfigureAwait(false);
             bool exists = Config.EtumrepDump.Servers.Count > 0 && Config.EtumrepDump.Servers.FirstOrDefault(x => x.IP != string.Empty && x.Token != string.Empty) is not null;
 
             if (exists)
@@ -82,13 +82,13 @@ public class EtumrepUtil
                 embed.Description = "Here are all the Pokémon you dumped!\nWould you like to calculate your seed using EtumrepMMO?";
                 embed.WithAuthor(x => { x.Name = "EtumrepMMO Service"; });
 
-                await dmCh.SendFilesAsync(list, null, false, embed: embed.Build(), null, null, null, components: components.Build()).ConfigureAwait(false);
+                await user.SendFilesAsync(list, null, false, embed: embed.Build(), null, components: components.Build()).ConfigureAwait(false);
                 return;
             }
 
             embed.Description = "Here are all the Pokémon you dumped!";
             embed.WithAuthor(x => { x.Name = "Pokémon Legends: Arceus Dump"; });
-            await dmCh.SendFilesAsync(list, null, false, embed: embed.Build()).ConfigureAwait(false);
+            await user.SendFilesAsync(list, null, false, embed: embed.Build()).ConfigureAwait(false);
         }
         catch (HttpException ex)
         {
@@ -112,7 +112,7 @@ public class EtumrepUtil
                 await UpdateEtumrepEmbed(component.Message, msg, Color.Green).ConfigureAwait(false);
                 LogUtil.LogInfo(msg, "[EtumrepMMO Handler]");
 
-                var user = await AuthenticateConnection(server.IP, server.Port, component).ConfigureAwait(false);
+                var user = await EstablishConnection(server.IP, server.Port, component).ConfigureAwait(false);
                 if (user is null)
                 {
                     msg = $"Unable to connect to {server.Name}. Server might be offline.";
@@ -121,19 +121,13 @@ public class EtumrepUtil
                     continue;
                 }
 
+                await Authenticate(user, server).ConfigureAwait(false);
                 if (!user.IsAuthenticated)
                 {
                     DisposeStream(user);
                     msg = $"{server.Name} rejected the connection.";
                     await UpdateEtumrepEmbed(component.Message, msg, Color.Red).ConfigureAwait(false);
                     LogUtil.LogInfo($"{user.BotName}: {msg}", "[EtumrepMMO Handler]");
-                    continue;
-                }
-
-                var authenticated = await Authenticate(user, server).ConfigureAwait(false);
-                if (!authenticated)
-                {
-                    DisposeStream(user);
                     continue;
                 }
 
@@ -165,23 +159,35 @@ public class EtumrepUtil
         }
     }
 
-    private static async Task<EtumrepUser?> AuthenticateConnection(string addr, int port, SocketMessageComponent component)
+    private static async Task<EtumrepUser?> EstablishConnection(string addr, int port, SocketMessageComponent component)
     {
         IPAddress ip = default!;
         var author = component.Message.Author;
         bool success = IPAddress.TryParse(addr, out IPAddress? address);
 
         if (success && address is not null)
+        {
             ip = address;
+        }
         else
         {
             try
             {
                 var dns = await Dns.GetHostEntryAsync(addr).ConfigureAwait(false);
-                var IPAdr = dns.AddressList.FirstOrDefault(x => x.ToString().Split('.').Length >= 4);
-                if (IPAdr is not null)
-                    ip = IPAdr;
-                else return null;
+                var ipv6Supported = NetworkInterface.GetAllNetworkInterfaces().FirstOrDefault(x => x.Supports(NetworkInterfaceComponent.IPv6)) is not null;
+
+                for (int i = 0; i < dns.AddressList.Length; i++)
+                {
+                    var adr = dns.AddressList[i];
+                    if (adr is not null && (adr.AddressFamily == (!ipv6Supported ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6)))
+                    {
+                        ip = adr;
+                        break;
+                    }
+                }
+
+                if (ip is null)
+                    throw new Exception("Could not resolve the host's IPv4/IPv6 address.");
             }
             catch (Exception ex)
             {
@@ -195,7 +201,7 @@ public class EtumrepUtil
 
         try
         {
-            client.Connect(ep);
+            await client.ConnectAsync(ep).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -206,39 +212,32 @@ public class EtumrepUtil
         EtumrepUser? user = null;
         try
         {
+            // Wait for up to 10 minutes to receive result to not overcomplicate with back and forth pings?
             var clientStream = client.GetStream();
-
-            // Wait for up to 10 minutes to receive result to not overcomplicate with back and forth pings? 
             clientStream.Socket.ReceiveTimeout = 600_000;
             clientStream.Socket.SendTimeout = 600_000;
 
-            var authStream = new NegotiateStream(clientStream, false);
-            user = new EtumrepUser(client, authStream, component);
-            var credentials = new NetworkCredential();
-
-            await authStream.AuthenticateAsClientAsync(credentials, "").ConfigureAwait(false);
-            user.IsAuthenticated = true;
-
-            LogUtil.LogInfo($"{user.BotName}: Initial server authentication complete. Continuing to authenticate {user.SeedCheckerName}...", "[Connection Authentication]");
+            user = new EtumrepUser(client, clientStream, component);
+            //LogUtil.LogInfo($"{user.BotName}: Initial client authentication complete. Continuing to authenticate {user.SeedCheckerName}...", "[Connection Authentication]");
             return user;
         }
         catch (Exception ex)
         {
-            LogUtil.LogInfo($"{user?.BotName}: Failed to authenticate with server. Dequeueing {user?.SeedCheckerName}...\n{ex.Message}", "[Connection Authentication]");
+            LogUtil.LogInfo($"{user?.BotName}: Failed to connect with server. Dequeueing {user?.SeedCheckerName}...\n{ex.Message}", "[Connection Authentication]");
             return user;
         }
     }
 
-    private static async Task<bool> Authenticate(EtumrepUser user, EtumrepDumpSettings.EtumrepServer server)
+    private static async Task Authenticate(EtumrepUser user, EtumrepServer server)
     {
         var auth = new UserAuth()
         {
             HostID = SysCord<PA8>.App.Owner.Id,
             HostName = $"{SysCord<PA8>.App.Owner.Username}#{SysCord<PA8>.App.Owner.Discriminator}",
-            HostPassword = server.LimitInputLength(server.Password, false),
+            HostPassword = EtumrepServer.LimitInputLength(server.Password, false),
             SeedCheckerID = user.SeedCheckerID,
-            SeedCheckerName = server.LimitInputLength(user.SeedCheckerName, true),
-            Token = server.LimitInputLength(server.Token, false),
+            SeedCheckerName = EtumrepServer.LimitInputLength(user.SeedCheckerName, true),
+            Token = EtumrepServer.LimitInputLength(server.Token, false),
         };
 
         try
@@ -250,11 +249,11 @@ public class EtumrepUtil
         catch (Exception ex)
         {
             LogUtil.LogInfo($"{user.BotName}: Error while sending user authentication to server. Dequeueing {user.SeedCheckerName}...\n{ex.Message}", "[Server Authentication]");
-            return false;
+            user.IsAuthenticated = false;
+            return;
         }
 
-        bool success = await GetServerConfirmation(user, "Server rejected the user authentication.").ConfigureAwait(false);
-        return success;
+        user.IsAuthenticated = await GetServerConfirmation(user, "Server rejected the user authentication.").ConfigureAwait(false);
     }
 
     private static async Task PrepareData(EtumrepUser user)
@@ -265,12 +264,13 @@ public class EtumrepUtil
 
         var att = user.Component.Message.Attachments.ToArray();
         byte[] data = new byte[376 * att.Length];
-        var client = new HttpClient();
-
-        for (int i = 0; i < att.Length; i++)
+        using var client = new HttpClient();
         {
-            var download = await client.GetByteArrayAsync(att[i].Url).ConfigureAwait(false);
-            download.CopyTo(data, 376 * i);
+            for (int i = 0; i < att.Length; i++)
+            {
+                var download = await client.GetByteArrayAsync(att[i].Url).ConfigureAwait(false);
+                download.CopyTo(data, 376 * i);
+            }
         }
 
         user.Data = data;

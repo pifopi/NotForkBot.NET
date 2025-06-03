@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -94,5 +95,12 @@ public abstract class SwitchRoutineExecutor<T> : RoutineExecutor<T> where T : cl
     }
 
     public async Task DaySkip(CancellationToken token) => await Connection.SendAsync(SwitchCommand.DaySkip(UseCRLF), token).ConfigureAwait(false);
+    public async Task TimeSkipFwd(CancellationToken token) => await SwitchConnection.SendAsync(SwitchCommand.TimeSkipForward(true), token).ConfigureAwait(false);
+    public async Task TimeSkipBwd(CancellationToken token) => await SwitchConnection.SendAsync(SwitchCommand.TimeSkipBack(true), token).ConfigureAwait(false);
+    public async Task SetDateTime(ulong date, CancellationToken token)
+    {
+        var command = Encoding.ASCII.GetBytes($"setCurrentTime {date}{(true ? "\r\n" : "")}");
+        await Connection.SendAsync(command, token).ConfigureAwait(false);
+    }
     public async Task ResetTime(CancellationToken token) => await Connection.SendAsync(SwitchCommand.ResetTime(UseCRLF), token).ConfigureAwait(false);
 }

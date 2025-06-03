@@ -13,7 +13,7 @@ public class EtumrepDumpSettings
     public int MaxWaitTime { get; set; } = 60;
 
     [Category(FeatureToggle), Description("List of EtumrepMMO Servers.")]
-    public List<EtumrepServer> Servers { get; set; } = new();
+    public List<EtumrepServer> Servers { get; set; } = [];
 
     public class EtumrepServer
     {
@@ -34,7 +34,7 @@ public class EtumrepDumpSettings
         [Category(Server), Description("Password given by the server host.")]
         public string Password { get; set; } = string.Empty;
 
-        public string LimitInputLength(string input, bool username)
+        public static string LimitInputLength(string input, bool username)
         {
             if (username && input.Length > 37)
                 return input[..37];

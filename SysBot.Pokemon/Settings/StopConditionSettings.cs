@@ -183,11 +183,21 @@ public class StopConditionSettings
     public string GetPrintName(PKM pk)
     {
         var set = ShowdownParsing.GetShowdownText(pk);
+
+        // Remove any lines starting with "Ability: ", "Dynamax Level: ", or "- "
+        var lines = set.Split('\n');
+        set = string.Join("\n", lines.Where(static l => !l.StartsWith("Ability: ") && !l.StartsWith("Dynamax Level: ") && !l.StartsWith("- ")));
+
+        // Since we can match on Min/Max Height for transfer to future games, display it.
+        if (pk is PK8 p)
+            set += $"\nHeight: {p.HeightScalar}";
+
+        // Add the mark if it has one.
         if (pk is IRibbonIndex r)
         {
             var rstring = GetMarkName(r);
             if (!string.IsNullOrEmpty(rstring))
-                set += $"\nPokémon found to have **{GetMarkName(r)}**!";
+                set += $"\nPokémon has the **{GetMarkName(r)}**!";
         }
         return set;
     }
@@ -209,6 +219,10 @@ public class StopConditionSettings
         if (pk is PK9 pk9)
         {
             set += $"\nScale: {PokeSizeDetailedUtil.GetSizeRating(pk9.Scale)} ({pk9.Scale})";
+        }
+        if (pk is PK8 pk8)
+        {
+            set += $"\nScale: {PokeSizeDetailedUtil.GetSizeRating(pk8.HeightScalar)} ({pk8.HeightScalar})";
         }
         return set;
     }

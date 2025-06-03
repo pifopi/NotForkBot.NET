@@ -1224,7 +1224,7 @@ namespace SysBot.Pokemon
                     string cl = catchlimit is 0 ? "\n**No catch limit!**" : $"\n**Catch Limit: {catchlimit}**";
                     var pkinfo = Hub.Config.StopConditions.GetRaidPrintName(pk);
                     pkinfo += $"\nTera Type: {(MoveType)container.Raids[i].TeraType}";
-                    var strings = GameInfo.GetStrings(1);
+                    var strings = GameInfo.GetStrings("en");
                     var moves = new ushort[4] { container.Encounters[i].Move1, container.Encounters[i].Move2, container.Encounters[i].Move3, container.Encounters[i].Move4 };
                     var movestr = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}ㅤ{Environment.NewLine}")).TrimEnd(Environment.NewLine.ToCharArray());
                     var extramoves = string.Empty;

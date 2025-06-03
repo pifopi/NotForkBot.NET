@@ -237,18 +237,15 @@ public abstract class PokeRoutineExecutor8SWSH : PokeRoutineExecutor<PK8>
         // Open game.
         await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
 
-        // Menus here can go in the order: Update Prompt -> Profile -> DLC check -> Unable to use DLC.
+        // Menus here can go in the order: Update Prompt -> Profile -> Starts Game
         //  The user can optionally turn on the setting if they know of a breaking system update incoming.
         if (timing.AvoidSystemUpdate)
         {
+            await Task.Delay(1_000, token).ConfigureAwait(false); // Reduce the chance of misclicking here.
             await Click(DUP, 0_600, token).ConfigureAwait(false);
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
         }
 
-        await Click(A, 1_000 + timing.ExtraTimeCheckDLC, token).ConfigureAwait(false);
-        // If they have DLC on the system and can't use it, requires an UP + A to start the game.
-        // Should be harmless otherwise since they'll be in loading screen.
-        await Click(DUP, 0_600, token).ConfigureAwait(false);
         await Click(A, 0_600, token).ConfigureAwait(false);
 
         Log("Restarting the game!");
@@ -383,7 +380,10 @@ public abstract class PokeRoutineExecutor8SWSH : PokeRoutineExecutor<PK8>
                 await SetStick(SwitchStick.LEFT, 3_500, 0, 0, token).ConfigureAwait(false); // →
                 await SetStick(SwitchStick.LEFT, 0, 3_500, 0, token).ConfigureAwait(false); // ↑
             }
-            else await SetStick(SwitchStick.LEFT, 0, 0, 0_100, token).ConfigureAwait(false);
+            else
+            {
+                await SetStick(SwitchStick.LEFT, 0, 0, 0_100, token).ConfigureAwait(false);
+            }
         } while (sw.ElapsedMilliseconds < waitms);
 
         await Task.Delay(waitInterval, token).ConfigureAwait(false);
@@ -423,7 +423,7 @@ public abstract class PokeRoutineExecutor8SWSH : PokeRoutineExecutor<PK8>
         await Click(X, 2_000, token).ConfigureAwait(false);
         await Click(R, 0_250, token).ConfigureAwait(false);
         while (!await IsOnOverworld(offset, token).ConfigureAwait(false))
-            await Click(A, 0_500, token).ConfigureAwait(false);
+            await Click(A, 1_000, token).ConfigureAwait(false);
         Log("Game saved!");
     }
 
@@ -435,9 +435,9 @@ public abstract class PokeRoutineExecutor8SWSH : PokeRoutineExecutor<PK8>
     {
         var ptr = pointer;
         uint finadd = 0;
-        if (!ptr.EndsWith("]"))
+        if (!ptr.EndsWith(']'))
             finadd = Util.GetHexValue(ptr.Split('+').Last());
-        var jumps = ptr.Replace("main", "").Replace("[", "").Replace("]", "").Split(new[] { "+" }, StringSplitOptions.RemoveEmptyEntries);
+        var jumps = ptr.Replace("main", "").Replace("[", "").Replace("]", "").Split(["+"], StringSplitOptions.RemoveEmptyEntries);
         if (jumps.Length == 0)
         {
             Log("Invalid Pointer");

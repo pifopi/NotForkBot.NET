@@ -4,7 +4,6 @@ using PKHeX.Core;
 using System.Threading.Tasks;
 
 namespace SysBot.Pokemon.Discord.Commands;
-
 public class EtumrepDumpModule<T> : ModuleBase<SocketCommandContext> where T : PKM, new()
 {
     private static TradeQueueInfo<T> Info => SysCord<T>.Runner.Hub.Queues.Info;

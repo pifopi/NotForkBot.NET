@@ -6,7 +6,6 @@ using System.Threading;
 using System.Collections.Generic;
 using System;
 using System.Linq;
-using ResultsUtil = SysBot.Base.ResultsUtil;
 using static SysBot.Base.SwitchButton;
 using static SysBot.Base.SwitchStick;
 using static SysBot.Pokemon.PokeDataOffsetsLA;
@@ -14,7 +13,7 @@ using SysBot.Base;
 
 namespace SysBot.Pokemon;
 
-public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBot
+public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot
 {
     private readonly PokeTradeHub<PA8> Hub;
     private readonly IDumper DumpSetting;
@@ -34,7 +33,7 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
     private ulong MainNsoBase;
     private ulong OverworldOffset;
     private (string, string, string) coordinates;
-    private List<PA8> boxlist = new();
+    private List<PA8> boxlist = [];
     private bool HasCharm = false;
 
     private static readonly string[] ObsidianTitle =
@@ -1459,7 +1458,7 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             var SpawnerOff = await SwitchConnection.PointerAll(SpawnerOffpoint, token).ConfigureAwait(false);
             var GeneratorSeed = await SwitchConnection.ReadBytesAbsoluteAsync(SpawnerOff, 8, token).ConfigureAwait(false);
             var group_seed = (BitConverter.ToUInt64(GeneratorSeed, 0) - 0x82A2B175229D6A5B) & 0xFFFFFFFFFFFFFFFF;
-            ResultsUtil.Log($"Generator Seed: {BitConverter.ToString(GeneratorSeed).Replace("-", "")}\nGroup Seed: {string.Format("0x{0:X}", group_seed)}", "");
+            Log($"Generator Seed: {BitConverter.ToString(GeneratorSeed).Replace("-", "")}\nGroup Seed: {string.Format("0x{0:X}", group_seed)}");
             GenerateNextShiny(i, group_seed);
         }
     }
@@ -1969,36 +1968,6 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
         }
         var rez = string.Join("", result);
         Log(rez);
-        var res = string.Join("", speclist);
-        ResultsUtil.Log(res, "[OutbreakScan]");
-
-        if (Settings.OutbreakConditions.Permute)
-        {
-            Log("Beginning Outbreak permutations...");
-            var (specieslist, results, moreresults) = ConsolePermuter.PermuteBlockMassOutbreak(info);
-            Log("Done with permutations, check the results tab! If no results, no permutations/outbreaks are present!");
-            var report = string.Join("\n", results);
-            ResultsUtil.Log(report, "");
-            string report2 = string.Join("\n", moreresults);
-            ResultsUtil.Log(report2, "");
-            bool afk = false;
-            foreach (Species s in specieslist)
-            {
-                if (list.Contains(s.ToString()))
-                {
-                    Log($"Desired species has a permutation!\n{report2}");
-                    afk = true;
-                }
-            }
-            if (afk)
-            {
-                Settings.AddCompletedShinyAlphaFound();
-                IsWaiting = true;
-                while (IsWaiting)
-                    await Task.Delay(1_000, token).ConfigureAwait(false);
-            }
-            IsWaiting = false;
-        }
     }
 
     private static (int, int) GrabEncounterSum(ulong encslot, ulong bonusslot)
@@ -2048,7 +2017,7 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
         bool huntedspecies = list.Contains($"{(Species)pk.Species}");
         if (string.IsNullOrEmpty(map) && Hub.Config.ArceusLA.OutbreakConditions.TypeOfScan == OutbreakScanType.OutbreakOnly)
         {
-            ResultsUtil.Log($"Outbreak for {(Species)pk.Species} has been found! Stopping routine execution!", "");
+            Log($"Outbreak for {(Species)pk.Species} has been found! Stopping routine execution!");
             IsWaiting = true;
             while (IsWaiting)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -2119,13 +2088,12 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             }
         }
 
-        ResultsUtil.Log(spawn, "");
         if (match)
         {
             IsWaiting = true;
             IsWaitingConfirmation = true;
             Settings.AddCompletedShinyAlphaFound();
-            ResultsUtil.Log($"Match found! Enter{map}, type $continue or click the Continue button and I'll teleport you to the location of {(Species)pk.Species} in a Massive Mass Outbreak!", "");
+            Log($"Match found! Enter{map}, type $continue or click the Continue button and I'll teleport you to the location of {(Species)pk.Species} in a Massive Mass Outbreak!");
             Log($"Match found! Enter{map}, type $continue or click the Continue button and I'll teleport you to the location of {(Species)pk.Species} in a Massive Mass Outbreak!");
             while (IsWaiting)
             {
@@ -2140,7 +2108,7 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
 
                     await TeleportToMMOGroupZone(token).ConfigureAwait(false);
                     await Click(HOME, 1_000, token).ConfigureAwait(false);
-                    ResultsUtil.Log($"Teleported to the location of {(Species)pk.Species}! Pressing HOME incase you weren't ready in game.", "");
+                    Log($"Teleported to the location of {(Species)pk.Species}! Pressing HOME incase you weren't ready in game.");
                     while (IsWaiting)
                         await Task.Delay(1_000, token).ConfigureAwait(false);
                 }
@@ -2182,10 +2150,10 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             ulong key = (ulong)(0x1337BABE12345678 + Util.Rand.Next(1, 999999999));
             var slots = new SlotDetail[]
             {
-                new(100, "Bidoof", false, new [] {3, 6}, 0),
-                new(2, "Bidoof", true , new [] {17, 19}, 3),
-                new(20, "Eevee", false, new [] {3, 6}, 0),
-                new(1, "Eevee", true , new [] {17, 19}, 3),
+                new(100, "Bidoof", false, [3, 6], 0),
+                new(2, "Bidoof", true , [17, 19], 3),
+                new(20, "Eevee", false, [3, 6], 0),
+                new(1, "Eevee", true , [17, 19], 3),
             };
             SetFakeTable(slots, key);
 
@@ -2224,8 +2192,8 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             ulong key = (ulong)(0x1337BABECAFEDEAD + Util.Rand.Next(1, 999999999));
             var slots = new SlotDetail[]
             {
-                new(100, "Combee", false, new [] {17, 20}, 0),
-                new(2, "Combee", true , new [] {32, 35}, 3),
+                new(100, "Combee", false, [17, 20], 0),
+                new(2, "Combee", true , [32, 35], 3),
             };
             SetFakeTable(slots, key);
 
@@ -2265,10 +2233,10 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             ulong key = (ulong)(0x1331B1B112345678 + Util.Rand.Next(1, 999999999));
             var slots = new SlotDetail[]
             {
-                new(25, "Psyduck", false, new [] {13, 16}, 0),
-                new(2, "Psyduck", true , new [] {28, 31}, 3),
-                new(25, "Buneary", false, new [] {13, 16}, 0),
-                new(2, "Buneary", true , new [] {28, 31}, 3),
+                new(25, "Psyduck", false, [13, 16], 0),
+                new(2, "Psyduck", true , [28, 31], 3),
+                new(25, "Buneary", false, [13, 16], 0),
+                new(2, "Buneary", true , [28, 31], 3),
             };
             SetFakeTable(slots, key);
 
@@ -2308,8 +2276,8 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             ulong key = (ulong)(0x1337B0BACAFEB00B + Util.Rand.Next(1, 999999999));
             var slots = new SlotDetail[]
             {
-                new(100, "Basculin-2", false, new [] {41, 44}, 0),
-                new(2, "Basculin-2", true , new [] {56, 59}, 3),
+                new(100, "Basculin-2", false, [41, 44], 0),
+                new(2, "Basculin-2", true , [56, 59], 3),
             };
             SetFakeTable(slots, key);
 
@@ -2349,10 +2317,10 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             ulong key = (ulong)(0x1221B3A312345678 + Util.Rand.Next(1, 999999999));
             var slots = new SlotDetail[]
             {
-                new(30, "Hippopotas", false, new [] {30, 33}, 0),
-                new(2, "Hippopotas", true , new [] {45, 48}, 3),
-                new(100, "Hippowdon", false, new [] {43, 46}, 0),
-                new(1, "Hippowdon", true , new [] {58, 61}, 3),
+                new(30, "Hippopotas", false, [30, 33], 0),
+                new(2, "Hippopotas", true , [45, 48], 3),
+                new(100, "Hippowdon", false, [43, 46], 0),
+                new(1, "Hippowdon", true , [58, 61], 3),
             };
             SetFakeTable(slots, key);
 
@@ -2392,10 +2360,10 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
             ulong key = (ulong)(0x1221B1B112345678 + Util.Rand.Next(1, 999999999));
             var slots = new SlotDetail[]
             {
-                new(100, "Magikarp", false, new [] {16, 19}, 0),
-                new(2, "Magikarp", true , new [] {31, 34}, 3),
-                new(30, "Gyarados", false, new [] {53, 56}, 0),
-                new(1, "Gyarados", true , new [] {68, 71}, 3),
+                new(100, "Magikarp", false, [16, 19], 0),
+                new(2, "Magikarp", true , [31, 34], 3),
+                new(30, "Gyarados", false, [53, 56], 0),
+                new(1, "Gyarados", true , [68, 71], 3),
             };
             SetFakeTable(slots, key);
 
@@ -2437,7 +2405,7 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
 
         for (int mapcount = 0; mapcount < 5; mapcount++)
         {
-            ResultsUtil.Log($"Checking map #{mapcount + 1}...", "");
+            Log($"Checking map #{mapcount + 1}...");
             ofs = [0x42BA6B0, 0x2B0, 0x58, 0x18, 0x1B0 + (mapcount * 0xB80)];
             outbreakptr = await SwitchConnection.PointerAll(ofs, token).ConfigureAwait(false);
             var active = BitConverter.ToUInt16(await SwitchConnection.ReadBytesAbsoluteAsync(outbreakptr, 2, token).ConfigureAwait(false), 0);
@@ -2502,60 +2470,12 @@ public sealed class ArceusBot : PokeRoutineExecutor8LA, IEncounterBot, IArceusBo
                     }
                 }
                 var report = string.Join("\n", logs);
-                ResultsUtil.Log(report, "[MMOScan]");
+                Log("[MMOScan]\n"+report);
                 groupcount++;
                 species = (Species)BitConverter.ToUInt16(mapinfo.AsSpan(36 + (groupcount * 144), 2).ToArray(), 0);
             }
             var actives = string.Join("", mmoactive);
             Log(actives);
-        }
-
-        if (Settings.OutbreakConditions.Permute)
-        {
-            string res = string.Empty;
-            Log("Beginning MMO permutations...");
-            var (specieslist, results, moreresults) = ConsolePermuter.PermuteMassiveMassOutbreak(info);
-            Log("Done with permutations, check the results tab! If no results, no permutations/outbreaks are present!");
-            var report = string.Join("\n", results);
-            string report2 = string.Join("\n", moreresults);
-            ResultsUtil.Log(report2, "");
-            ResultsUtil.Log(report, "");
-            ResultsUtil.Log(res, "");
-            string[] list = Settings.SpeciesToHunt.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            bool afk = false;
-            if (list.Length != 0)
-            {
-                foreach (Species s in specieslist)
-                {
-                    if (list.Contains(s.ToString()))
-                    {
-                        afk = true;
-                        PA8 s1 = new()
-                        {
-                            Species = (ushort)s
-                        };
-                        string url = TradeExtensions<PK9>.PokeImg(s1, false, false);
-                        var print = Hub.Config.StopConditions.GetAlphaPrintName(s1);
-                        EchoUtil.EchoEmbed(Hub.Config.StopConditions.MatchFoundEchoMention, print, url, "", true);
-                        Settings.AddCompletedShinyAlphaFound();
-                    }
-                }
-                if (afk)
-                {
-                    Log($"Desired species has a permutation!\n{report}");
-
-                    IsWaiting = true;
-                    while (IsWaiting)
-                        await Task.Delay(1_000, token).ConfigureAwait(false);
-                }
-            }
-            if (list.Length == 0 && specieslist.Count > 0)
-            {
-                IsWaiting = true;
-                while (IsWaiting)
-                    await Task.Delay(1_000, token).ConfigureAwait(false);
-            }
-            IsWaiting = false;
         }
     }
 

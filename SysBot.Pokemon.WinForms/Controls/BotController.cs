@@ -1,5 +1,4 @@
 ﻿using SysBot.Base;
-
 using SysBot.Pokemon.Discord;
 using System;
 using System.ComponentModel;
@@ -11,14 +10,16 @@ namespace SysBot.Pokemon.WinForms;
 
 public partial class BotController : UserControl
 {
+#pragma warning disable WFO1000 // Missing code serialization configuration for property content
     public PokeBotState State { get; private set; } = new();
+#pragma warning restore WFO1000 // Missing code serialization configuration for property content
     private IPokeBotRunner? Runner;
     public EventHandler? Remove;
 
     public BotController()
     {
         InitializeComponent();
-        var opt = (BotControlCommand[])Enum.GetValues(typeof(BotControlCommand));
+        var opt = Enum.GetValues<BotControlCommand>();
 
         for (int i = 1; i < opt.Length; i++)
         {
@@ -94,7 +95,7 @@ public partial class BotController : UserControl
         }
 
         var cfg = bot.Config;
-        if (cfg.CurrentRoutineType == PokeRoutineType.Idle && cfg.NextRoutineType == PokeRoutineType.Idle)
+        if (cfg is { CurrentRoutineType: PokeRoutineType.Idle, NextRoutineType: PokeRoutineType.Idle })
         {
             PB_Lamp.BackColor = Color.Yellow;
             return;
