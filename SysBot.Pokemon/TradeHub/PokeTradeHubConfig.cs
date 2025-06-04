@@ -113,6 +113,10 @@ public sealed class PokeTradeHubConfig : BaseConfig
 
     [Category(Integration)]
     [TypeConverter(typeof(ExpandableObjectConverter))]
+    public VersionSettings Version { get; set; } = new();
+
+    [Category(Integration)]
+    [TypeConverter(typeof(ExpandableObjectConverter))]
     public DiscordSettings Discord { get; set; } = new();
 
     [Category(Integration)]

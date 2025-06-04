@@ -1,12 +1,11 @@
 ﻿using PKHeX.Core;
 using SysBot.Base;
-using SysBot.Pokemon.Discord;
 using SysBot.Pokemon.Z3;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -141,11 +140,23 @@ public sealed partial class Main : Form
     [JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
     public sealed partial class ProgramConfigContext : JsonSerializerContext { }
 
-    private void B_Start_Click(object sender, EventArgs e)
+    private async void B_Start_Click(object sender, EventArgs e)
     {
         SaveCurrentConfig();
         if (Bots.Count > 0 && !DaySkipDisclaimer())
             return;
+
+        var check = Config.Hub.Version.CheckForLatestBuild;
+        if (check)
+        {
+            bool versionCheck = await VersionCheck().ConfigureAwait(false);
+            if (!versionCheck)
+            {
+                MessageBox.Show(this, $"Please update to the latest build of NotForkBot.NET for the best experience.\n" +
+                    $"If you wish to proceed without updating to the latest build, disable the Build Check in Version Settings.", "Update Available!");
+                return;
+            }
+        }
 
         LogUtil.LogInfo("Starting all bots...", "Form");
         RunningEnvironment.InitializeStart();
@@ -322,6 +333,24 @@ public sealed partial class Main : Form
                 default: continue;
             }
         }
+        return true;
+    }
+
+    // Zyro Additions
+
+    private async Task<bool> VersionCheck()
+    {
+        int applicationID = Config.Hub.Version.BuildID;
+        string latestazure = "https://dev.azure.com/zyrocodez/Project%20Zyro/_apis/build/builds?definitions=2&$top=1&api-version=5.0-preview.5";
+        HttpClient client = new();
+        var content = await client.GetStringAsync(latestazure).ConfigureAwait(false);
+        int azureID = int.Parse(content.Substring(135, 3));
+        if (azureID != applicationID)
+        {
+            LogUtil.LogInfo($"Azure: {azureID} | Current:{applicationID}", "Build ID mismatch ");
+            return false;
+        }
+        LogUtil.LogInfo($"Azure: {azureID} | Current: {applicationID}", "Build ID match ");
         return true;
     }
 }
