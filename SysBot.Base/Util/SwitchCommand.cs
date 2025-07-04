@@ -132,6 +132,9 @@ public static class SwitchCommand
     public static byte[] TypeMultipleKeys(IEnumerable<HidKeyboardKey> keys, bool crlf = true)
         => Encode($"key{string.Concat(keys.Select(z => $" {(int)z}"))}", crlf);
 
+    public static byte[] TypeUpperKey(HidKeyboardKey key, bool crlf = true)
+    => Encode($"keyMod {(int)key} 8", crlf);
+
     /*
      *
      * Memory I/O Commands

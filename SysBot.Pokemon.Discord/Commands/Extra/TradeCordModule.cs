@@ -175,7 +175,7 @@ public class TradeCordModule<T> : ModuleBase<SocketCommandContext> where T : PKM
                 if (!la.Valid)
                 {
                     await Context.Channel.SendMessageAsync(result.Message).ConfigureAwait(false);
-                    var path = Path.Combine(folder, PKHeX.Core.Util.CleanFileName(result.Poke.FileName));
+                    var path = Path.Combine(folder, PathUtil.CleanFileName(result.Poke.FileName));
                     File.WriteAllBytes(path, result.Poke.DecryptedPartyData);
                     return;
                 }
@@ -187,7 +187,7 @@ public class TradeCordModule<T> : ModuleBase<SocketCommandContext> where T : PKM
                 if (!la.Valid)
                 {
                     await Context.Channel.SendMessageAsync(result.Message).ConfigureAwait(false);
-                    var path = Path.Combine(folder, PKHeX.Core.Util.CleanFileName(result.EggPoke.FileName));
+                    var path = Path.Combine(folder, PathUtil.CleanFileName(result.EggPoke.FileName));
                     File.WriteAllBytes(path, result.EggPoke.DecryptedPartyData);
                     return;
                 }

@@ -109,6 +109,7 @@ public class TIDResetBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
 
     private async Task SelectLang(CancellationToken token)
     {
+        Log($"Selecting avatar: {Settings.SWSH_LangSelect}...");
         switch (Settings.SWSH_LangSelect)
         {
             case TIDResetBotSettings.SWSHLanguage.English: await Click(A, 0_050, token).ConfigureAwait(false); break;
@@ -130,6 +131,7 @@ public class TIDResetBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
 
     private async Task SelectAvatar(CancellationToken token)
     {
+        Log($"Selecting avatar: {Settings.SWSH_AvatarSelect}...");
         switch (Settings.SWSH_AvatarSelect)
         {
             case TIDResetBotSettings.SWSHAvatar.BoyDefault: await Click(A, 0_050, token).ConfigureAwait(false); break;
@@ -145,18 +147,34 @@ public class TIDResetBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
 
     private async Task EnterTrainerOT(CancellationToken token)
     {
-        var strokes = Settings.SWSH_OT.ToUpper().ToArray();
+        var ot_string = Settings.SWSH_OT.ToArray();
         var number = $"NumPad";
-        List<HidKeyboardKey> keystopress = [];
-        foreach (var str in strokes)
+        Log($"Entering {ot_string}...");
+        foreach (var str in ot_string)
         {
             foreach (HidKeyboardKey keypress in (HidKeyboardKey[])Enum.GetValues(typeof(HidKeyboardKey)))
             {
-                if (str.ToString().Equals(keypress.ToString()) || (number + str.ToString()).Equals(keypress.ToString()))
-                    keystopress.Add(keypress);
+                if (!char.IsUpper(str))
+                {
+                    char upperStr = new();
+                    upperStr = char.ToUpper(str);
+                    if (upperStr.ToString().Equals(keypress.ToString()) || (number + upperStr.ToString()).Equals(keypress.ToString()))
+                    {
+                        await SwitchConnection.SendAsync(SwitchCommand.TypeKey(keypress), token).ConfigureAwait(false);
+                        break;
+                    }
+                }
+
+                else if (char.IsUpper(str))
+                {
+                    if (str.ToString().Equals(keypress.ToString()) || (number + str.ToString()).Equals(keypress.ToString()))
+                    {
+                        await SwitchConnection.SendAsync(SwitchCommand.TypeUpperKey(keypress), token).ConfigureAwait(false);
+                        break;
+                    }
+                }
             }
         }
-        await SwitchConnection.SendAsync(SwitchCommand.TypeMultipleKeys(keystopress, true), token).ConfigureAwait(false);
         await Click(PLUS, 0_500, token).ConfigureAwait(false);
         await Click(PLUS, 0_500, token).ConfigureAwait(false);
     }

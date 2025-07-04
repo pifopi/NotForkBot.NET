@@ -453,7 +453,7 @@ public class PokeTradeBotSV : PokeRoutineExecutor9SV, ICountBot
         {
             var subfolder = poke.Type.ToString().ToLower();
             DumpPokemon(DumpSetting.DumpFolder, subfolder, received); // received by bot
-            if (poke.Type is PokeTradeType.Specific or PokeTradeType.Clone)
+            if (poke.Type is PokeTradeType.Specific or PokeTradeType.Clone or PokeTradeType.SupportTrade)
                 DumpPokemon(DumpSetting.DumpFolder, "traded", toSend); // sent to partner
         }
     }

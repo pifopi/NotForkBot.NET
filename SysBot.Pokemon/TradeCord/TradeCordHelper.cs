@@ -269,6 +269,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
             if (Rng.EggRNG >= 100 - Settings.EggRate && canGenerate)
             {
                 result.EggPoke = EggProcess(user.Daycare, evos, balls, Game is GameVersion.SV ? 9 : 8, trainerInfo, out eggMsg);
+                result.EggPoke.Legalize();
                 if (!new LegalityAnalysis(result.EggPoke).Valid)
                 {
                     result.Message = $"Oops, something went wrong when generating an egg!" +
@@ -1996,6 +1997,7 @@ public class TradeCordHelper<T> : TradeCordDatabase<T> where T : PKM, new()
 
         pk.ResetPartyStats();
         pk.SetSuggestedHyperTrainingData();
+        pk.LegalizePokemon();
         msg = $"&^&You got {(pk.IsShiny ? "a **shiny egg**" : "an egg")} from the daycare! Welcome, {(pk.IsShiny ? $"**{finalEggName}**" : $"{finalEggName}")}!";
         return pk;
     }

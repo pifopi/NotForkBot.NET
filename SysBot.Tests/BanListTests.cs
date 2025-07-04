@@ -10,7 +10,7 @@ public class BanListTests
 
     // To-Do: Add a test that compares CFW-name with Levenshtein/log10p result.
     [Fact]
-    public async void IsBannedTestCC()
+    public async System.Threading.Tasks.Task IsBannedTestCC()
     {
         var result = await BanService.IsRaiderBanned("Fidio", Url, "TestRoutine", true);
         result.Item1.Should().BeTrue();

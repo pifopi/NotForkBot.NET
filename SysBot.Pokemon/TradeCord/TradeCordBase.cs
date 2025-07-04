@@ -793,7 +793,7 @@ public abstract class TradeCordBase<T> where T : PKM, new()
         if (result != "Regenerated")
             return false;
 
-        var preEvolutions = EncounterOrigin.GetOriginChain(pkm, 9);
+        var preEvolutions = EncounterOrigin.GetOriginChain(pkm, 9, EntityContext.Gen9);
         var encs = EncounterGenerator.GetGenerator(Game, 9).GetPossible(pkm, preEvolutions, Game, EncounterTypeGroup.Egg).ToArray();
         if (encs.Length is 0 || !Breeding.CanHatchAsEgg(species) || !Breeding.CanHatchAsEgg(species, form, pkm.Context))
             return false;
@@ -1435,7 +1435,7 @@ public abstract class TradeCordBase<T> where T : PKM, new()
                     continue;
 
                 var evoTree = EvolutionTree.GetEvolutionTree(blank.Context);
-                var preEvos = EncounterOrigin.GetOriginChain(blank, 9);
+                var preEvos = EncounterOrigin.GetOriginChain(blank, 9, EntityContext.Gen9);
                 var evos = evoTree.Forward.GetEvolutions(blank.Species, blank.Form);
 
                 if (preEvos.Length >= 2 && evos.Count() is 0)

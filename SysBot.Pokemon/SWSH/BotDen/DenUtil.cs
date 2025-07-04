@@ -276,7 +276,7 @@ public class DenUtil
             return null;
 
         byte[] array = new byte[stream.Length];
-        stream.Read(array, 0, array.Length);
+        stream.ReadExactly(array);
         return array;
     }
 

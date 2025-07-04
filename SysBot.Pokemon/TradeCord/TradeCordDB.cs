@@ -795,11 +795,11 @@ public abstract class TradeCordDatabase<T> : TradeCordBase<T> where T : PKM, new
 
     private bool SameEvoTree(PKM pkm1, PKM pkm2)
     {
-        var evos = EncounterOrigin.GetOriginChain(pkm1, 9);
+        var evos = EncounterOrigin.GetOriginChain(pkm1, 9, EntityContext.Gen9);
         var encs = EncounterGenerator.GetGenerator(Game, 9).GetPossible(pkm1, evos, Game, EncounterTypeGroup.Egg).ToArray();
         var base1 = encs.Length > 0 ? encs[^1].Species : -1;
 
-        evos = EncounterOrigin.GetOriginChain(pkm2, 9);
+        evos = EncounterOrigin.GetOriginChain(pkm2, 9, EntityContext.Gen9);
         encs = [.. EncounterGenerator.GetGenerator(Game, 9).GetPossible(pkm2, evos, Game, EncounterTypeGroup.Egg)];
         var base2 = encs.Length > 0 ? encs[^1].Species : -2;
 
