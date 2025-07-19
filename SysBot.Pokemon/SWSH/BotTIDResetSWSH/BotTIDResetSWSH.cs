@@ -65,11 +65,10 @@ public class TIDResetBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
 
     private async Task InnerLoop(CancellationToken token)
     {
-        uint prevOT = 0;
         while (!token.IsCancellationRequested)
         {
             var sav = await GetFakeTrainerSAV(token).ConfigureAwait(false);
-            prevOT = sav.TrainerTID7;
+            uint prevOT = sav.TrainerTID7;
             if (sav.TrainerTID7 >= 0)
             {
                 await SelectLang(token).ConfigureAwait(false);
@@ -92,7 +91,7 @@ public class TIDResetBotSWSH : PokeRoutineExecutor8SWSH, IEncounterBot
                 }
 
                 Log($"{sav.TrainerTID7}");
-                string[] tidList = Hub.Config.TIDReset.DesiredTIDs.Trim().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] tidList = Hub.Config.TIDReset.DesiredTIDs.Trim().Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
                 bool desired = tidList.Contains($"{sav.TrainerTID7}");
                 if (desired)
                 {

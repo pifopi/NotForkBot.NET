@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using SysBot.Base;
-using System.Text.RegularExpressions;
-using System.Text;
-
 
 namespace SysBot.Pokemon;
 

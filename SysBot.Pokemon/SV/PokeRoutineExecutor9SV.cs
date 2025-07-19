@@ -11,7 +11,6 @@ using RaidCrawler.Core.Structures;
 using static SysBot.Pokemon.PokeDataOffsetsSV;
 using static SysBot.Base.SwitchButton;
 using static System.Buffers.Binary.BinaryPrimitives;
-using System.Text;
 
 namespace SysBot.Pokemon;
 
@@ -74,7 +73,7 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
 
     public async Task SetCurrentBox(byte box, CancellationToken token)
     {
-        await SwitchConnection.PointerPoke(new[] { box }, Offsets.CurrentBoxPointer, token).ConfigureAwait(false);
+        await SwitchConnection.PointerPoke([box], Offsets.CurrentBoxPointer, token).ConfigureAwait(false);
     }
 
     public async Task<byte> GetCurrentBox(CancellationToken token)
@@ -582,10 +581,10 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
 
     public static string[] ProcessRaidPlaceholders(string[] description, PKM pk)
     {
-        string[] raidDescription = Array.Empty<string>();
+        string[] raidDescription = [];
 
         if (description.Length > 0)
-            raidDescription = description.ToArray();
+            raidDescription = [.. description];
 
         string markEntryText = "";
         string markTitle = "";
@@ -603,7 +602,7 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
         string SPA = pk.IV_SPA.ToString();
         string SPD = pk.IV_SPD.ToString();
         string SPE = pk.IV_SPE.ToString();
-        string nature = $"{(Nature)pk.Nature}";
+        string nature = $"{pk.Nature}";
         string genderSymbol = pk.Gender == 0 ? "♂" : pk.Gender == 1 ? "♀" : "⚥";
         string genderText = $"{(Gender)pk.Gender}";
         string ability = $"{GameInfo.GetStrings("en").Ability[pk.Ability]}";
