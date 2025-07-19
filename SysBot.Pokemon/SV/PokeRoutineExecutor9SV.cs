@@ -506,7 +506,13 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
             Species = enc.Species,
             Form = enc.Form
         };
-        Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+        var criteria = new EncounterCriteria { Shiny = enc.Shiny };
+        bool check = Encounter9RNG.GenerateData(blank, param, criteria, raid.Seed);
+        if (!check)
+        {
+            criteria = new EncounterCriteria { Shiny = blank.IsShiny ? Shiny.Always : Shiny.Random };
+            Encounter9RNG.GenerateData(blank, param, criteria, raid.Seed);
+        }
 
         return (blank, raid.Seed);
     }
