@@ -305,6 +305,10 @@ namespace SysBot.Pokemon
                     dayRoll++;
                     continue;
                 }
+                else
+                {
+                    dayRoll = 0;
+                }
 
                 if (Hub.Config.Stream.CreateAssets)
                     await GetRaidSprite(token).ConfigureAwait(false);
